@@ -3,6 +3,8 @@ package org.badmintonchain.model.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -39,11 +41,6 @@ public class CourtEntity extends BaseEntity {
         @Column(name = "court_type", length = 50) // indoor, outdoor
         private String courtType;
 
-//        @Column(columnDefinition = "TEXT")
-//        private String location;
-//
-//        @Column(name = "capacity")
-//        private Integer capacity;
         @Column(name = "hourly_rate", precision =  10, scale = 2)
         private BigDecimal hourlyRate;
 
@@ -51,6 +48,7 @@ public class CourtEntity extends BaseEntity {
         private String description;
 
         // images: ["url1", "url2", "url3"]
+        @JdbcTypeCode(SqlTypes.JSON)
         @Column(columnDefinition = "jsonb")
         private List<String> images;
 

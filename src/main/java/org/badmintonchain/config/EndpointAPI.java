@@ -6,11 +6,17 @@ public class EndpointAPI {
             "/api/auth/register",
             "/api/auth/logout",
             "/api/auth/refresh",
-            "/api/auth/verify"
+            "/api/auth/verify",
+            "/api/courts/**"
     };
 
-    public  static final String[] PRIVATE_ENDPOINTS = {};
+    public  static final String[] PRIVATE_ENDPOINTS = {
 
-    public  static final String[] MANAGEMENT_API_ENDPOINTS  = {};
+
+    };
+
+    public  static final String[] MANAGEMENT_API_ENDPOINTS  = {
+            "/api/admin/courts",
+    };
 
 }

@@ -1,5 +1,7 @@
 package org.badmintonchain.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
+import org.badmintonchain.exceptions.CourtException;
 import org.badmintonchain.model.dto.CourtDTO;
 import org.badmintonchain.model.entity.CourtEntity;
 import org.badmintonchain.model.mapper.CourtMapper;
@@ -38,7 +40,8 @@ public class CourtServiceImpl implements CourtService {
 
     @Override
     public CourtDTO getCourtById(Long id) {
-        CourtEntity court = courtRepository.findById(id).get();
+        CourtEntity court = courtRepository.findById(id)
+                .orElseThrow(()-> new CourtException("Court not found with id " + id));
         CourtDTO courtDTO = CourtMapper.toCourtDTO(court);
         return courtDTO;
     }
@@ -53,7 +56,7 @@ public class CourtServiceImpl implements CourtService {
     @Override
     public CourtDTO updateCourt(Long id, CourtDTO courtDTO) {
         CourtEntity court = courtRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Court not found"));
+                .orElseThrow(() -> new CourtException("Court not found"));
 
         if (courtDTO.getCourtName() != null) {
             court.setCourtName(courtDTO.getCourtName());
@@ -81,7 +84,7 @@ public class CourtServiceImpl implements CourtService {
     @Override
     public void deleteCourtById(Long id) {
         CourtEntity court = courtRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Court not found"));
+                .orElseThrow(() -> new CourtException("Court not found"));
         courtRepository.delete(court);
     }
 }

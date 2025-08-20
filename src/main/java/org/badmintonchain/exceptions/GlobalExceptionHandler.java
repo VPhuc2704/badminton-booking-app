@@ -1,5 +1,6 @@
 package org.badmintonchain.exceptions;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,14 +26,15 @@ public class GlobalExceptionHandler  {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
-    @ExceptionHandler(value = VerificationTokenException.class)
-    public ResponseEntity<Map<String,Object>> handleVerificationTokenException(VerificationTokenException ex){
+    @ExceptionHandler({VerificationTokenException.class,
+                        CourtException.class})
+    public ResponseEntity<Map<String,Object>> handleVerificationTokenException(RuntimeException ex, HttpServletRequest request){
         Map<String,Object> body = new HashMap<>();
         body.put("error", "Bad Request");
         body.put("message", ex.getMessage());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("timestamp", Instant.now());
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        return ResponseEntity.badRequest().body(body);
     }
 
 

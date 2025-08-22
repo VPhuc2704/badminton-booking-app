@@ -103,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
-        user.setNumberPhone(request.getPhone());
+//        user.setNumberPhone(request.getPhone());
         user.setRoleName(RoleName.CUSTOMMER);
         user.setActive(false);
 

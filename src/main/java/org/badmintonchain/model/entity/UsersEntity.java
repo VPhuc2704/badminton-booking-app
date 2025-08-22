@@ -41,8 +41,8 @@ public class UsersEntity extends BaseEntity{
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @Column(name = "number_phone", length = 15)
-    private String numberPhone;
+//    @Column(name = "number_phone", length = 15)
+//    private String numberPhone;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role_name")

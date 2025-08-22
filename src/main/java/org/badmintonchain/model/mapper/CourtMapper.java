@@ -13,6 +13,7 @@ public class CourtMapper {
         dto.setDescription(courtEntity.getDescription());
         dto.setImages(courtEntity.getImages());
         dto.setIsActive(courtEntity.getIsActive());
+        dto.setStatus(courtEntity.getStatus());
         return dto;
     }
 
@@ -24,6 +25,7 @@ public class CourtMapper {
         entity.setDescription(dto.getDescription());
         entity.setImages(dto.getImages());
         entity.setIsActive(dto.getIsActive());
+        entity.setStatus(dto.getStatus());
         return entity;
     }
 

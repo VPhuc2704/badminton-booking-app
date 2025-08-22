@@ -3,6 +3,7 @@ package org.badmintonchain.model.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.badmintonchain.model.enums.CourtStatus;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -54,5 +55,8 @@ public class CourtEntity extends BaseEntity {
 
         @Column(name = "is_active")
         private Boolean isActive = true;
+
+        @Enumerated(EnumType.STRING)
+        private CourtStatus status;
 
 }

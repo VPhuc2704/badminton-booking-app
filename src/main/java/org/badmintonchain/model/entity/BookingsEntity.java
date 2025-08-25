@@ -6,6 +6,8 @@ import lombok.Setter;
 import org.badmintonchain.model.enums.BookingStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Date;
 
 @Entity
@@ -47,13 +49,13 @@ public class BookingsEntity extends BaseEntity{
     private CourtEntity court;
 
     @Column(name = "booking_date", nullable = false)
-    private Date bookingDate;
+    private LocalDate bookingDate;
 
     @Column(name = "start_time", nullable = false)
-    private Date startTime;
+    private LocalTime startTime;
 
     @Column(name = "end_time", nullable = false)
-    private Date endTime;
+    private LocalTime  endTime;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "booking_status",nullable = false)

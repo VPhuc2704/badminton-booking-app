@@ -32,6 +32,9 @@ public class CustomerEntity extends  BaseEntity{
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UsersEntity users;
 
+    @Column(name = "phone")
+    private String numberPhone;
+
 //    @Column(name = "customer_code")
 //    private String customerCode;
 //

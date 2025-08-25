@@ -16,8 +16,19 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
             "AND b.bookingDate = :bookingDate " +
             "AND ((b.startTime < :endTime AND b.endTime > :startTime))"
     )
-
     List<BookingsEntity> findConflictingBookings(
+            @Param("courtId") Long courtId,
+            @Param("bookingDate") LocalDate bookingDate,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
+    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN TRUE ELSE FALSE END " +
+            "FROM BookingsEntity b " +
+            "WHERE b.court.id = :courtId " +
+            "AND b.bookingDate = :bookingDate " +
+            "AND (b.startTime < :endTime AND b.endTime > :startTime)")
+    boolean existsConflictingBookings(
             @Param("courtId") Long courtId,
             @Param("bookingDate") LocalDate bookingDate,
             @Param("startTime") LocalTime startTime,

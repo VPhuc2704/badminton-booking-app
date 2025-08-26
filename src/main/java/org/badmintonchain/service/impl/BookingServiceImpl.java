@@ -1,6 +1,7 @@
 package org.badmintonchain.service.impl;
 
 import jakarta.transaction.Transactional;
+import org.badmintonchain.exceptions.BookingException;
 import org.badmintonchain.exceptions.CourtException;
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.entity.BookingsEntity;
@@ -22,7 +23,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -102,5 +103,27 @@ public class BookingServiceImpl implements BookingService {
         double hours = minutes / 60.0;
         return court.getHourlyRate().multiply(BigDecimal.valueOf(hours));
 
+    }
+
+    @Override
+    public BookingDTO getBookingById(Long bookingId, Long userId) {
+
+        BookingsEntity bookingsEntity = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingException("User not found"));
+
+        // Kiểm tra booking có thuộc user hiện tại không
+        if (!bookingsEntity.getCustomer().getUsers().getId().equals(userId)) {
+            throw new BookingException("You are not allowed to access this booking");
+        }
+        return BookingMapper.toBookingDTO(bookingsEntity);
+    }
+
+    @Override
+    public List<BookingDTO> getAllBookingByUserId(Long userId) {
+        List<BookingsEntity> bookingsEntityList = bookingRepository.findAllByCustomer_Users_Id(userId);
+        return bookingsEntityList
+                .stream()
+                .map(BookingMapper::toBookingDTO)
+                .collect(Collectors.toList());
     }
 }

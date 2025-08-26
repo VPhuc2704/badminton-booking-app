@@ -35,4 +35,5 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
             @Param("endTime") LocalTime endTime
     );
 
+    List<BookingsEntity> findAllByCustomer_Users_Id(Long userId);
 }

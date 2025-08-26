@@ -11,9 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequestMapping(value = "/api")
@@ -38,4 +38,36 @@ public class BookingController {
     }
 
 
+    @GetMapping("/bookings/{id}")
+    public ResponseEntity<ApiResponse<BookingDTO>> getBookingById(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                                                 @PathVariable("id") Long bookingId,
+                                                                 HttpServletRequest httpServletRequest) {
+        BookingDTO booking = bookingService.getBookingById(bookingId, currentUser.getUser().getId());
+
+        ApiResponse<BookingDTO> response = new ApiResponse<>(
+                "Booking retrieved  successfully",
+                HttpStatus.OK.value(),
+                booking,
+                httpServletRequest.getRequestURI()   // "/bookings"
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/bookings")
+    public ResponseEntity<ApiResponse<List<BookingDTO>>> getAllBookingsByUser(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            HttpServletRequest httpServletRequest
+    ) {
+        List<BookingDTO> bookings = bookingService.getAllBookingByUserId(currentUser.getUser().getId());
+
+        ApiResponse<List<BookingDTO>> response = new ApiResponse<>(
+                "Bookings retrieved successfully",
+                HttpStatus.OK.value(),
+                bookings,
+                httpServletRequest.getRequestURI()
+        );
+
+        return ResponseEntity.ok(response);
+    }
 }

@@ -26,8 +26,11 @@ public class GlobalExceptionHandler  {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
-    @ExceptionHandler({VerificationTokenException.class,
-                        CourtException.class})
+    @ExceptionHandler({
+            VerificationTokenException.class,
+            CourtException.class,
+            BookingException.class
+    })
     public ResponseEntity<Map<String,Object>> handleVerificationTokenException(RuntimeException ex, HttpServletRequest request){
         Map<String,Object> body = new HashMap<>();
         body.put("error", "Bad Request");

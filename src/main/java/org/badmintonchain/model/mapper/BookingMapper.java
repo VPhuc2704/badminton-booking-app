@@ -15,6 +15,7 @@ public class BookingMapper {
     // Entity -> DTO
     public static BookingDTO toBookingDTO(BookingsEntity bookingEntity) {
         BookingDTO booking = new BookingDTO();
+        booking.setId(bookingEntity.getId());
         booking.setBookingCode(UUID.randomUUID().toString().substring(0, 10));
         booking.setCustomer(
                 CustomerMapper.toCustomerDTO(bookingEntity.getCustomer())
@@ -33,6 +34,7 @@ public class BookingMapper {
     // DTO -> Entity
     public static BookingsEntity toBookingsEntity(BookingDTO bookingDTO, CustomerEntity customer, CourtEntity court) {
         BookingsEntity booking = new BookingsEntity();
+        booking.setId(bookingDTO.getId());
         booking.setBookingCode(
                 bookingDTO.getBookingCode() != null
                         ? bookingDTO.getBookingCode()

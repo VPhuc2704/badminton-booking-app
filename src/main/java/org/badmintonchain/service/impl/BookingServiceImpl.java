@@ -5,10 +5,7 @@ import org.badmintonchain.exceptions.BookingException;
 import org.badmintonchain.exceptions.CourtException;
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
-import org.badmintonchain.model.entity.BookingsEntity;
-import org.badmintonchain.model.entity.CourtEntity;
-import org.badmintonchain.model.entity.CustomerEntity;
-import org.badmintonchain.model.entity.UsersEntity;
+import org.badmintonchain.model.entity.*;
 import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.mapper.BookingMapper;
 import org.badmintonchain.repository.BookingRepository;
@@ -16,7 +13,9 @@ import org.badmintonchain.repository.CourtRepository;
 import org.badmintonchain.repository.CustomerRepository;
 import org.badmintonchain.repository.UserRepository;
 import org.badmintonchain.service.BookingService;
+import org.badmintonchain.service.event.BookingCreatedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,6 +41,8 @@ public class BookingServiceImpl implements BookingService {
     private CourtRepository courtRepository;
     @Autowired
     private BookingRepository bookingRepository;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -84,16 +84,13 @@ public class BookingServiceImpl implements BookingService {
         // 7. Lưu booking vào DB
         BookingsEntity saved = bookingRepository.save(booking);
 
-
-//        EmailEntity emailLog = new EmailLogEntity();
-//        emailLog.setBookingId(savedBooking.getBookingId());
-//        emailLog.setRecipientEmail(user.getEmail());
-//        emailLog.setSubject("Xác nhận đặt sân #" + savedBooking.getBookingCode());
-//        emailLog.setEmailType("BOOKING_CONFIRMATION");
-//        emailLog.setTemplateUsed("booking_confirmation");
-//        emailLogRepo.save(emailLog);
-
-//        return savedBooking;
+        eventPublisher.publishEvent(new BookingCreatedEvent(
+                saved.getId(),
+                user.getEmail(),
+                court.getCourtName(),
+                bookingRequest.getBookingDate(),
+                bookingRequest.getStartTime()
+                ));
 
         return BookingMapper.toBookingDTO(saved);
     }

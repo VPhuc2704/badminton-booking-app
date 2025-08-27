@@ -27,7 +27,7 @@ public class BookingMapper {
         booking.setStartTime(bookingEntity.getStartTime());
         booking.setEndTime(bookingEntity.getEndTime());
         booking.setTotalAmount(bookingEntity.getTotalAmount());
-//        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setStatus(bookingEntity.getStatus());
         return booking;
     }
 
@@ -46,7 +46,7 @@ public class BookingMapper {
         booking.setStartTime(bookingDTO.getStartTime());
         booking.setEndTime(bookingDTO.getEndTime());
         booking.setTotalAmount(bookingDTO.getTotalAmount());
-//        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setStatus(bookingDTO.getStatus());
 
         return booking;
     }

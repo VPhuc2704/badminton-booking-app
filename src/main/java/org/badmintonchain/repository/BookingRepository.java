@@ -1,6 +1,7 @@
 package org.badmintonchain.repository;
 
 import org.badmintonchain.model.entity.BookingsEntity;
+import org.badmintonchain.model.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,4 +37,8 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
     );
 
     List<BookingsEntity> findAllByCustomer_Users_Id(Long userId);
+
+    List<BookingsEntity> findAllByBookingDate(LocalDate date);
+    List<BookingsEntity> findAllByBookingDateAndCourt_Id(LocalDate date, Long courtId);
+    List<BookingsEntity> findAllByBookingDateAndCourt_IdAndStatus(LocalDate date, Long courtId, BookingStatus status);
 }

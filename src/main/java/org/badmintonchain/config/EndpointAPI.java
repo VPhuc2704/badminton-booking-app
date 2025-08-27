@@ -16,6 +16,7 @@ public class EndpointAPI {
 
     public  static final String[] MANAGEMENT_API_ENDPOINTS  = {
             "/api/admin/courts",
+            "/api/admin/bookings/**"
     };
 
 }

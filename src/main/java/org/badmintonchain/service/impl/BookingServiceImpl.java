@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.badmintonchain.exceptions.BookingException;
 import org.badmintonchain.exceptions.CourtException;
 import org.badmintonchain.model.dto.BookingDTO;
+import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.entity.BookingsEntity;
 import org.badmintonchain.model.entity.CourtEntity;
 import org.badmintonchain.model.entity.CustomerEntity;
@@ -16,11 +17,16 @@ import org.badmintonchain.repository.CustomerRepository;
 import org.badmintonchain.repository.UserRepository;
 import org.badmintonchain.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,6 +54,10 @@ public class BookingServiceImpl implements BookingService {
         // 2. Lấy thông tin sân
         CourtEntity court = courtRepository.findById(bookingRequest.getCourt().getId())
                 .orElseThrow(() -> new CourtException("Court not found"));
+
+        if (!court.getIsActive()) {
+            throw new CourtException("Court " + court.getCourtName() + " is not available for booking.");
+        }
 
         // 3. Kiểm tra hoặc tạo mới khách hàng (customer) nếu chưa có
         CustomerEntity customer = getOrCreateCustomer(user, bookingRequest);
@@ -126,4 +136,40 @@ public class BookingServiceImpl implements BookingService {
                 .map(BookingMapper::toBookingDTO)
                 .collect(Collectors.toList());
     }
+
+    // --- ADMIN ---
+    @Override
+    public PageResponse<BookingDTO> getAllBookings(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by( "bookingDate").descending());
+
+        Page<BookingsEntity> bookings = bookingRepository.findAll(pageable);
+
+        List<BookingDTO> bookingDTOs = bookings.getContent()
+                .stream()
+                .map(BookingMapper::toBookingDTO)
+                .toList();
+
+        return new PageResponse<>(
+                bookingDTOs,
+                bookings.getNumber(),
+                bookings.getSize(),
+                bookings.getTotalElements(),
+                bookings.getTotalPages(),
+                bookings.isFirst(),
+                bookings.isLast()
+        );
+    }
+
+    @Override
+    @Transactional
+    public BookingDTO updateBookingStatus(Long bookingId, BookingStatus newStatus ) {
+        BookingsEntity booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingException("Booking not found"));
+
+        booking.setStatus(newStatus);
+        bookingRepository.save(booking);
+
+        return BookingMapper.toBookingDTO(booking);
+    }
+
 }

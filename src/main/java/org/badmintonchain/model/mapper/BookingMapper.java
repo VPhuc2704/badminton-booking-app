@@ -1,12 +1,9 @@
 package org.badmintonchain.model.mapper;
 
 import org.badmintonchain.model.dto.BookingDTO;
-import org.badmintonchain.model.dto.CourtDTO;
-import org.badmintonchain.model.dto.CustomerDTO;
 import org.badmintonchain.model.entity.BookingsEntity;
 import org.badmintonchain.model.entity.CourtEntity;
 import org.badmintonchain.model.entity.CustomerEntity;
-import org.badmintonchain.model.enums.BookingStatus;
 
 import java.util.UUID;
 

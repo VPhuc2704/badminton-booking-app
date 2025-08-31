@@ -8,8 +8,7 @@ import org.badmintonchain.model.dto.response.LoginResponse;
 import org.badmintonchain.model.dto.response.TokenDTO;
 import org.badmintonchain.model.dto.response.UserInfoDTO;
 import org.badmintonchain.model.entity.UsersEntity;
-import org.badmintonchain.repository.UserRepository;
-import org.badmintonchain.repository.VerificationTokenRepository;
+
 import org.badmintonchain.security.JwtTokenProvider;
 import org.badmintonchain.service.AuthService;
 import org.badmintonchain.service.RefreshTokenService;

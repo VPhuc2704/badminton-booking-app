@@ -1,11 +1,7 @@
 package org.badmintonchain.service.listener;
 
 import org.badmintonchain.config.RabbitMQConfig;
-import org.badmintonchain.exceptions.BookingException;
-import org.badmintonchain.model.entity.BookingsEntity;
 import org.badmintonchain.model.enums.EmailType;
-import org.badmintonchain.repository.BookingRepository;
-import org.badmintonchain.service.BookingService;
 import org.badmintonchain.service.EmailService;
 import org.badmintonchain.service.event.BookingCreatedEvent;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

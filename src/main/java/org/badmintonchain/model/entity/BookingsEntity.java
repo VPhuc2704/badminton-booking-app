@@ -40,11 +40,11 @@ public class BookingsEntity extends BaseEntity{
     @Column(name = "booking_code", unique = true)
     private String bookingCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = false)
     private CustomerEntity customer;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "court_id", nullable = false)
     private CourtEntity court;
 

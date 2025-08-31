@@ -1,6 +1,10 @@
 package org.badmintonchain.service.listener;
 
 import org.badmintonchain.config.RabbitMQConfig;
+import org.badmintonchain.exceptions.BookingException;
+import org.badmintonchain.model.entity.BookingsEntity;
+import org.badmintonchain.model.enums.EmailType;
+import org.badmintonchain.repository.BookingRepository;
 import org.badmintonchain.service.EmailService;
 import org.badmintonchain.service.event.BookingCreatedEvent;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -18,17 +22,14 @@ public class BookingEventListener {
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private BookingRepository bookingRepository;
 
     @EventListener(BookingCreatedEvent.class)
     public void handleBookingCreatedEvent(BookingCreatedEvent event) {
-        // 1. Gửi email xác nhận ngay
-        emailService.sendBookingConfirmationEmail(
-                event.getUserEmail(),
-                "Xác nhận đặt sân #" + event.getBookingId(),
-                "Bạn đã đặt sân " + event.getCourtName() +
-                        " vào " + event.getBookingDate() +
-                        " lúc " + event.getStartTime()
-        );
+
+        // Gửi email xác nhận
+        emailService.sendBookingEmail(event, EmailType.CONFIRMATION);
 
         // 2. Tính thời điểm nhắc nhở
         LocalDateTime bookingDateTime = LocalDateTime.of(event.getBookingDate(), event.getStartTime());

@@ -1,6 +1,11 @@
 package org.badmintonchain.service.listener;
 
 import org.badmintonchain.config.RabbitMQConfig;
+import org.badmintonchain.exceptions.BookingException;
+import org.badmintonchain.model.entity.BookingsEntity;
+import org.badmintonchain.model.enums.EmailType;
+import org.badmintonchain.repository.BookingRepository;
+import org.badmintonchain.service.BookingService;
 import org.badmintonchain.service.EmailService;
 import org.badmintonchain.service.event.BookingCreatedEvent;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -14,11 +19,9 @@ public class ReminderConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.REMINDER_QUEUE)
     public void handleReminder(BookingCreatedEvent event) {
-        emailService.sendBookingConfirmationEmail(
-                event.getUserEmail(),
-                "Nhắc nhở lịch đặt sân",
-                "Đây là lời nhắc: bạn có lịch tại " + event.getCourtName() +
-                        " vào " + event.getBookingDate() + " lúc " + event.getStartTime()
-        );
+
+        // Gửi email nhắc lịch
+        emailService.sendBookingEmail(event, EmailType.REMINDER);
+
     }
 }

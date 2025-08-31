@@ -86,11 +86,17 @@ public class BookingServiceImpl implements BookingService {
 
         eventPublisher.publishEvent(new BookingCreatedEvent(
                 saved.getId(),
+                saved.getBookingCode(),
                 user.getEmail(),
+                user.getFullName(),
                 court.getCourtName(),
-                bookingRequest.getBookingDate(),
-                bookingRequest.getStartTime()
-                ));
+                court.getCourtType(),
+                saved.getBookingDate(),
+                saved.getStartTime(),
+                saved.getEndTime(),
+                saved.getTotalAmount(),
+                customer.getNumberPhone()
+        ));
 
         return BookingMapper.toBookingDTO(saved);
     }

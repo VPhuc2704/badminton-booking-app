@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -140,6 +141,27 @@ public class BookingServiceImpl implements BookingService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public BookingDTO cancelBooking(Long bookingId, Long userId) {
+        BookingsEntity booking = bookingRepository.findByIdAndCustomer_Users_Id(bookingId, userId);
+        if (booking == null) throw new BookingException("Booking not found or unauthorized");
+
+        // kiểm tra thời gian
+        LocalDateTime bookingDateTime = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+        if (bookingDateTime.isBefore(LocalDateTime.now())) {
+            throw new BookingException("Cannot cancel past bookings");
+        }
+
+        if (booking.getStatus() == BookingStatus.CANCELLED ||  booking.getStatus() == BookingStatus.CONFIRMED) {
+            throw new BookingException("Booking already cancelled");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        BookingsEntity  saved =bookingRepository.save(booking);
+
+        return BookingMapper.toBookingDTO(saved);
+    }
+
     // --- ADMIN ---
     @Override
     public PageResponse<BookingDTO> getAllBookings(int page, int size) {
@@ -173,6 +195,14 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
 
         return BookingMapper.toBookingDTO(booking);
+    }
+
+    @Override
+    public void deleteBooking(Long bookingId) {
+        if (!bookingRepository.existsById(bookingId)) {
+            throw new RuntimeException("Booking not found");
+        }
+        bookingRepository.deleteById(bookingId);
     }
 
 }

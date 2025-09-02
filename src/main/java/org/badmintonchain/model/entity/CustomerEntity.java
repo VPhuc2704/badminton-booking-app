@@ -3,15 +3,16 @@ package org.badmintonchain.model.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.badmintonchain.model.enums.GenderEnum;
-
+import lombok.extern.slf4j.Slf4j;
+import org.badmintonchain.model.entity.BaseEntity;
 import java.util.Date;
 
 @Entity
 @Table(name = "customers")
 @Getter
 @Setter
-public class CustomerEntity extends  BaseEntity{
+@Slf4j
+public class CustomerEntity extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -73,6 +73,20 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/bookings/{id}/cancel")
+    public ResponseEntity<ApiResponse<BookingDTO>> cancelBooking(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable("id") Long bookingId,
+            HttpServletRequest httpServletRequest) {
+
+        BookingDTO booking = bookingService.cancelBooking(bookingId, currentUser.getUser().getId());
+
+        return ResponseEntity.ok(
+                new ApiResponse<>("Booking cancelled successfully", HttpStatus.OK.value(),
+                        booking, httpServletRequest.getRequestURI()));
+    }
+
+
     // ---------- ADMIN ----------
     @GetMapping("/admin/bookings")
     public ResponseEntity<ApiResponse<PageResponse<BookingDTO>>> getAllBookingsForAdmin(
@@ -102,4 +116,17 @@ public class BookingController {
                 new ApiResponse<>("Booking confirmed successfully", HttpStatus.OK.value(),
                         booking, httpServletRequest.getRequestURI()));
     }
+
+    @DeleteMapping("/admin/bookings/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteBooking(
+            @PathVariable("id") Long bookingId,
+            HttpServletRequest httpServletRequest) {
+
+        bookingService.deleteBooking(bookingId);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>("Booking deleted successfully", HttpStatus.OK.value(),
+                        null, httpServletRequest.getRequestURI()));
+    }
+
 }

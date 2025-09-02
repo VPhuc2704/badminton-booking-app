@@ -1,6 +1,7 @@
 package org.badmintonchain.model.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.badmintonchain.model.enums.BookingStatus;
@@ -14,6 +15,7 @@ import java.util.Date;
 @Table(name = "bookings")
 @Getter
 @Setter
+@Data
 public class BookingsEntity extends BaseEntity{
 /*
     CREATE TABLE bookings (

@@ -10,6 +10,8 @@ public interface BookingService {
     BookingDTO createBoking(BookingDTO booking,  Long userId);
     BookingDTO getBookingById(Long bookingId, Long userId);
     List<BookingDTO> getAllBookingByUserId(Long userId);
+    BookingDTO cancelBooking(Long bookingId, Long userId);
     PageResponse<BookingDTO> getAllBookings(int page, int size);
     BookingDTO updateBookingStatus(Long bookingId, BookingStatus newStatus );
+    void deleteBooking(Long bookingId);
 }

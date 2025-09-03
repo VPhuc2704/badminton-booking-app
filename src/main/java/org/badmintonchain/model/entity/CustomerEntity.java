@@ -5,7 +5,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.badmintonchain.model.entity.BaseEntity;
+
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "customers")
@@ -35,6 +38,9 @@ public class CustomerEntity extends BaseEntity{
 
     @Column(name = "phone")
     private String numberPhone;
+
+    @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
+    private List<BookingsEntity> bookings = new ArrayList<>();
 
 //    @Column(name = "customer_code")
 //    private String customerCode;

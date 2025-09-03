@@ -11,12 +11,15 @@ public class EndpointAPI {
     };
 
     public  static final String[] PRIVATE_ENDPOINTS = {
-            "/api/bookings/**"
+            "/api/bookings/**",
+            "/api/users/infor/*"
+
     };
 
     public  static final String[] MANAGEMENT_API_ENDPOINTS  = {
             "/api/admin/courts",
-            "/api/admin/bookings/**"
+            "/api/admin/bookings/**",
+            "/api/admin/users/**"
     };
 
 }

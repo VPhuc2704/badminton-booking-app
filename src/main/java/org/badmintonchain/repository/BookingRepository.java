@@ -38,6 +38,7 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
 
     List<BookingsEntity> findAllByCustomer_Users_Id(Long userId);
     BookingsEntity findByIdAndCustomer_Users_Id(Long id, Long userId);
+    Boolean existsByCustomer_Id(Long id);
 
     List<BookingsEntity> findAllByBookingDate(LocalDate date);
     List<BookingsEntity> findAllByBookingDateAndCourt_Id(LocalDate date, Long courtId);

@@ -33,38 +33,50 @@ public class CustomerController {
         );
     }
 
-    @GetMapping("/admin/users/{id}")
-    public ResponseEntity<ApiResponse<CustomerUserDTO>> getUserDetail(
-            @PathVariable Long id,
-            HttpServletRequest request
-    ) {
+    @GetMapping("/users/{id}")
+    public ResponseEntity<ApiResponse<CustomerUserDTO>> getUserDetail(@PathVariable Long id,
+                                                                      @AuthenticationPrincipal CustomUserDetails currentUser,
+                                                                      HttpServletRequest request) {
+        boolean isAdmin = currentUser.getUser().getRoleName() == RoleName.ADMIN;
+        boolean isSelf = currentUser.getUser().getId().equals(id);
+
+        if (!isAdmin && !isSelf) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>("Access denied", 403, null, request.getRequestURI()));
+        }
+
         CustomerUserDTO dto = customerService.getUserDetail(id);
         return ResponseEntity.ok(
                 new ApiResponse<>("User retrieved successfully", HttpStatus.OK.value(), dto, request.getRequestURI())
         );
     }
 
-    @PutMapping("/user/infor/{id}")
+    @PutMapping("/users/{id}")
     public ResponseEntity<ApiResponse<CustomerUserDTO>> updateUser(
             @PathVariable Long id,
             @RequestBody CustomerUserDTO requestDto,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             HttpServletRequest request
     ) {
-        if (currentUser.getUser().getRoleName() != RoleName.ADMIN &&
-                !currentUser.getUser().getId().equals(id)) {
+        Long currentUserId = currentUser.getUser().getId();
+        boolean isAdmin = currentUser.getUser().getRoleName() == RoleName.ADMIN;
+        boolean isSelf = currentUserId.equals(id);
+
+        if (!isAdmin && !isSelf) {
+            // user thường mà update người khác -> cấm
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>("Access denied", 403, null, request.getRequestURI()));
         }
 
-        CustomerUserDTO dto = customerService.updateUser(id, requestDto);
+        CustomerUserDTO updated = customerService.updateUser(id, requestDto, isAdmin);
+
         return ResponseEntity.ok(
-                new ApiResponse<>("User updated successfully", HttpStatus.OK.value(), dto, request.getRequestURI())
+                new ApiResponse<>("User updated successfully", HttpStatus.OK.value(), updated, request.getRequestURI())
         );
     }
 
 
-    @DeleteMapping("/admin/user/{id}")
+    @DeleteMapping("/admin/users/{id}")
     public ResponseEntity<ApiResponse<String>> deleteUser(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails currentUser,
@@ -80,7 +92,7 @@ public class CustomerController {
 
         return ResponseEntity.ok(new ApiResponse<>(
                 "User deleted successfully",
-                HttpStatus.OK.value(),
+                HttpStatus.NO_CONTENT.value(),
                 null,
                 request.getRequestURI()
         ));

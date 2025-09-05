@@ -1,5 +1,6 @@
 package org.badmintonchain.service.impl;
 
+import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.CustomerUserDTO;
 import org.badmintonchain.model.entity.CustomerEntity;
 import org.badmintonchain.model.entity.UsersEntity;
@@ -40,30 +41,45 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerUserDTO getUserDetail(Long userId) {
         UsersEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsersException("User not found"));
         return toDTO(user);
     }
 
     @Override
     @Transactional
-    public CustomerUserDTO updateUser(Long userId, CustomerUserDTO request) {
+    public CustomerUserDTO updateUser(Long userId, CustomerUserDTO request, boolean isAdmin) {
         UsersEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsersException("User not found"));
 
-        if (request.getFullName() != null) {
-            user.setFullName(request.getFullName());
+        // --- USER chỉ được update 1 số trường ---
+        if (!isAdmin) {
+            if (request.getFullName() != null) {
+                user.setFullName(request.getFullName());
+            }
+            if (request.getEmail() != null) {
+                user.setEmail(request.getEmail());
+            }
         }
-        if (request.getEmail() != null) {
-            user.setEmail(request.getEmail());
+
+        // --- ADMIN có thể update tất cả ---
+        else {
+            if (request.getFullName() != null) {
+                user.setFullName(request.getFullName());
+            }
+            if (request.getEmail() != null) {
+                user.setEmail(request.getEmail());
+            }
+            if (request.getActive() != null) {
+                user.setActive(request.getActive());
+            }
+            if (request.getRoleName() != null) {
+                user.setRoleName(RoleName.valueOf(request.getRoleName()));
+            }
         }
-        if (request.getActive() != null) {
-            user.setActive(request.getActive());
-        }
-        if (request.getRoleName() != null) {
-            user.setRoleName(RoleName.valueOf(request.getRoleName()));
-        }
+
         userRepository.save(user);
 
+        // --- Nếu là CUSTOMER thì quản lý thêm thông tin khách hàng ---
         if (user.getRoleName() == RoleName.CUSTOMMER) {
             CustomerEntity customer = customerRepository.findByUsers_Id(userId)
                     .orElseGet(() -> {
@@ -71,6 +87,8 @@ public class CustomerServiceImpl implements CustomerService {
                         c.setUsers(user);
                         return c;
                     });
+
+            // số điện thoại: cả User và Admin đều có thể sửa
             if (request.getNumberPhone() != null) {
                 customer.setNumberPhone(request.getNumberPhone());
             }
@@ -80,10 +98,11 @@ public class CustomerServiceImpl implements CustomerService {
         return toDTO(user);
     }
 
+
     @Override
     public void deleteUser(Long userId) {
         UsersEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UsersException("User not found"));
 
         if (user.getRoleName() == RoleName.CUSTOMMER) {
             Optional<CustomerEntity> customerOpt = customerRepository.findByUsers_Id(userId);

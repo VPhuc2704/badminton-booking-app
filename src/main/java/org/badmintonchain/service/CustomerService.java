@@ -8,7 +8,7 @@ public interface CustomerService {
 
     CustomerUserDTO getUserDetail(Long userId);
 
-    CustomerUserDTO updateUser(Long userId, CustomerUserDTO request);
+    CustomerUserDTO updateUser(Long userId, CustomerUserDTO request, boolean isAdmin);
 
     void deleteUser(Long userId);
 }

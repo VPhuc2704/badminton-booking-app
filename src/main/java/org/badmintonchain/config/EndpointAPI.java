@@ -7,7 +7,8 @@ public class EndpointAPI {
             "/api/auth/logout",
             "/api/auth/refresh",
             "/api/auth/verify",
-            "/api/courts/**"
+            "/api/courts/**",
+            "/api/quotations/send"
     };
 
     public  static final String[] PRIVATE_ENDPOINTS = {
@@ -19,7 +20,9 @@ public class EndpointAPI {
     public  static final String[] MANAGEMENT_API_ENDPOINTS  = {
             "/api/admin/courts",
             "/api/admin/bookings/**",
-            "/api/admin/users/**"
+            "/api/admin/users/**",
+            "/api/admin/services/*"
+
     };
 
 }

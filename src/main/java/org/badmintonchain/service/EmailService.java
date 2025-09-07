@@ -6,4 +6,5 @@ import org.badmintonchain.service.event.BookingCreatedEvent;
 public interface EmailService {
     void sendVerificationEmail(String to, String token);
     void sendBookingEmail(BookingCreatedEvent bookingEvent, EmailType type);
+    void sendQuotationEmail(String to, String subject, String content);
 }

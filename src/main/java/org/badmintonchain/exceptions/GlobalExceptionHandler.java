@@ -30,7 +30,8 @@ public class GlobalExceptionHandler  {
             VerificationTokenException.class,
             CourtException.class,
             BookingException.class,
-            UsersException.class
+            UsersException.class,
+            ServicesException.class
     })
     public ResponseEntity<Map<String,Object>> handleVerificationTokenException(RuntimeException ex, HttpServletRequest request){
         Map<String,Object> body = new HashMap<>();

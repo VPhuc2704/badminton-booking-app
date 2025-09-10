@@ -5,9 +5,9 @@ import lombok.Getter;
 //CREATE TYPE court_status AS ENUM ('available', 'maintenance', 'unavailable');
 @Getter
 public enum CourtStatus {
-    available("Có Sẵn"),
-    maintenance("Đang bảo trì"),
-    unavailable("Không có sẵn");
+    AVAILABLE("Có Sẵn"),
+    MAINTENANCE("Đang bảo trì"),
+    UNAVAILABLE("Không có sẵn");
 
     private final String statusName;
 

@@ -80,7 +80,7 @@ public class CustomerServiceImpl implements CustomerService {
         userRepository.save(user);
 
         // --- Nếu là CUSTOMER thì quản lý thêm thông tin khách hàng ---
-        if (user.getRoleName() == RoleName.CUSTOMMER) {
+        if (user.getRoleName() == RoleName.CUSTOMER) {
             CustomerEntity customer = customerRepository.findByUsers_Id(userId)
                     .orElseGet(() -> {
                         CustomerEntity c = new CustomerEntity();
@@ -104,7 +104,7 @@ public class CustomerServiceImpl implements CustomerService {
         UsersEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsersException("User not found"));
 
-        if (user.getRoleName() == RoleName.CUSTOMMER) {
+        if (user.getRoleName() == RoleName.CUSTOMER) {
             Optional<CustomerEntity> customerOpt = customerRepository.findByUsers_Id(userId);
 
             if (customerOpt.isPresent()) {

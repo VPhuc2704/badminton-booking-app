@@ -35,7 +35,7 @@ public class OpenAiClient {
 
     // Sliding window rate limiter
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofSeconds(60);
-    private static final int MAX_REQUESTS_PER_WINDOW = 10;
+    private static final int MAX_REQUESTS_PER_WINDOW = 20;
     private final Queue<Long> requestTimestamps = new ConcurrentLinkedQueue<>();
 
     public OpenAiClient(WebClient.Builder builder,
@@ -66,7 +66,7 @@ public class OpenAiClient {
     }
 
     private Retry createRetrySpec() {
-        return Retry.backoff(4, Duration.ofSeconds(2))
+        return Retry.backoff(2, Duration.ofSeconds(2))
                 .filter(ex -> ex instanceof WebClientResponseException.TooManyRequests
                         || ex instanceof WebClientResponseException.ServiceUnavailable)
                 .maxBackoff(Duration.ofSeconds(20))
@@ -79,7 +79,7 @@ public class OpenAiClient {
                 );
     }
 
-    //Embedding
+    // Embedding
     public float[] createEmbedding(String text) {
         resetIfNewDay();
         if (embeddingCount.incrementAndGet() > EMBEDDING_LIMIT_PER_DAY) {
@@ -87,22 +87,31 @@ public class OpenAiClient {
         }
 
         while (!allowRequest()) {
-            try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         try {
             semaphore.acquire();
 
-            Map<String, Object> body = Map.of(
-                    "model", "models/embedding-001",
+            // Đúng schema cho batchEmbedContents
+            Map<String, Object> requestItem = Map.of(
+                    "model", "models/text-embedding-004",
                     "content", Map.of(
                             "parts", List.of(Map.of("text", text))
                     )
             );
 
+            Map<String, Object> body = Map.of(
+                    "requests", List.of(requestItem)
+            );
+
             JsonNode resp = webClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/v1beta/models/embedding-001:embedContent")
+                            .path("/v1beta/models/text-embedding-004:batchEmbedContents")
                             .queryParam("key", apiKey)
                             .build())
                     .bodyValue(body)
@@ -112,11 +121,11 @@ public class OpenAiClient {
                     .timeout(Duration.ofSeconds(30))
                     .block();
 
-            if (resp == null || !resp.has("embedding")) {
+            if (resp == null || !resp.has("embeddings")) {
                 throw new RuntimeException("Invalid response from Gemini embedding API");
             }
 
-            JsonNode arr = resp.get("embedding").get("values");
+            JsonNode arr = resp.get("embeddings").get(0).get("values");
             float[] embedding = new float[arr.size()];
             for (int i = 0; i < arr.size(); i++) {
                 embedding[i] = (float) arr.get(i).asDouble();
@@ -137,7 +146,7 @@ public class OpenAiClient {
         }
     }
 
-    //Chat
+    // Chat
     public String chatCompletion(String prompt, String context, String question) {
         resetIfNewDay();
         if (chatCount.incrementAndGet() > CHAT_LIMIT_PER_DAY) {
@@ -145,7 +154,11 @@ public class OpenAiClient {
         }
 
         while (!allowRequest()) {
-            try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         // Gộp prompt + context + question
@@ -178,11 +191,10 @@ public class OpenAiClient {
                 return "Không nhận được phản hồi hợp lệ từ Gemini";
             }
 
-            return  resp.get("candidates").get(0)
+            return resp.get("candidates").get(0)
                     .get("content")
                     .get("parts").get(0)
                     .get("text").asText();
-
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

@@ -26,6 +26,15 @@ public class BookingMapper {
         booking.setEndTime(bookingEntity.getEndTime());
         booking.setTotalAmount(bookingEntity.getTotalAmount());
         booking.setStatus(bookingEntity.getStatus());
+        booking.setPaymentStatus(bookingEntity.getPaymentStatus());
+
+//        // Gắn thêm transaction info nếu có
+//        TransactionEntity transaction = bookingEntity.getTransaction();
+//        if (transaction != null) {
+//            booking.setPaymentMethod(transaction.getPaymentMethod());
+//            booking.setTransactionDate(transaction.getTransactionDate());
+//        }
+
         return booking;
     }
 
@@ -47,6 +56,7 @@ public class BookingMapper {
         booking.setStatus(
                 bookingDTO.getStatus() != null ? bookingDTO.getStatus() : BookingStatus.PENDING
         );
+        booking.setPaymentStatus(bookingDTO.getPaymentStatus());
 
         return booking;
     }

@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.badmintonchain.model.enums.BookingStatus;
+import org.badmintonchain.model.enums.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -65,6 +66,12 @@ public class BookingsEntity extends BaseEntity{
 
     @Column(name = "total_amount", precision =  10, scale = 2)
     private BigDecimal totalAmount;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
+
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
+    private TransactionEntity transaction;
 //
 //    @Column(name = "payment_status", nullable = false)
 //    private String paymentStatus;

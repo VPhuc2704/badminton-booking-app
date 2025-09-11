@@ -2,6 +2,8 @@ package org.badmintonchain.model.dto;
 
 import lombok.Data;
 import org.badmintonchain.model.enums.BookingStatus;
+import org.badmintonchain.model.enums.PaymentMethod;
+import org.badmintonchain.model.enums.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,4 +20,5 @@ public class BookingDTO {
     private LocalTime endTime;
     private BookingStatus status;
     private BigDecimal totalAmount;
+    private PaymentStatus paymentStatus;
 }

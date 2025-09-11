@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.enums.BookingStatus;
+import org.badmintonchain.model.enums.PaymentMethod;
 import org.badmintonchain.security.CustomUserDetails;
 import org.badmintonchain.service.BookingService;
 import org.badmintonchain.utils.ApiResponse;
@@ -105,6 +106,24 @@ public class BookingController {
         );
     }
 
+    @GetMapping("/admin/bookings/{id}")
+    public ResponseEntity<ApiResponse<BookingDTO>> getBookingByIdForAdmin(
+            @PathVariable("id") Long bookingId,
+            HttpServletRequest httpServletRequest) {
+
+        BookingDTO booking = bookingService.getBookingByIdForAdmin(bookingId);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(
+                        "Booking retrieved successfully",
+                        HttpStatus.OK.value(),
+                        booking,
+                        httpServletRequest.getRequestURI()
+                )
+        );
+    }
+
+
     @PutMapping("/admin/bookings/{id}/status")
     public ResponseEntity<ApiResponse<BookingDTO>> confirmBooking(
             @PathVariable("id") Long bookingId,
@@ -129,4 +148,19 @@ public class BookingController {
                         null, httpServletRequest.getRequestURI()));
     }
 
+
+    @PostMapping("/admin/bookings/{bookingId}/pay")
+    public ResponseEntity<ApiResponse<BookingDTO>> payBooking(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                                              @PathVariable("bookingId") Long bookingId,
+                                                              @RequestParam PaymentMethod method,
+                                                              HttpServletRequest httpServletRequest) {
+        BookingDTO dto = bookingService.processPayment(bookingId, method, currentUser.getUser().getFullName() );
+        return ResponseEntity.ok(
+                new ApiResponse<>(
+                "Payment processed successfully",
+                HttpStatus.OK.value(),
+                dto,
+                httpServletRequest.getRequestURI()
+        ));
+    }
 }

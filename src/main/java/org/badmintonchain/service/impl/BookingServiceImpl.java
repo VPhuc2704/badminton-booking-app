@@ -7,11 +7,10 @@ import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.entity.*;
 import org.badmintonchain.model.enums.BookingStatus;
+import org.badmintonchain.model.enums.PaymentMethod;
+import org.badmintonchain.model.enums.PaymentStatus;
 import org.badmintonchain.model.mapper.BookingMapper;
-import org.badmintonchain.repository.BookingRepository;
-import org.badmintonchain.repository.CourtRepository;
-import org.badmintonchain.repository.CustomerRepository;
-import org.badmintonchain.repository.UserRepository;
+import org.badmintonchain.repository.*;
 import org.badmintonchain.service.BookingService;
 import org.badmintonchain.service.event.BookingCreatedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -44,6 +44,8 @@ public class BookingServiceImpl implements BookingService {
     private BookingRepository bookingRepository;
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+    @Autowired
+    private TransactionRepository transactionRepository;
 
 
     @Override
@@ -81,6 +83,8 @@ public class BookingServiceImpl implements BookingService {
         BookingsEntity booking = BookingMapper.toBookingsEntity(bookingRequest, customer, court);
         booking.setTotalAmount(totalPrice);
         booking.setStatus(BookingStatus.PENDING);
+        booking.setPaymentStatus(PaymentStatus.UNPAID);
+
 
         // 7. Lưu booking vào DB
         BookingsEntity saved = bookingRepository.save(booking);
@@ -203,6 +207,47 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("Booking not found");
         }
         bookingRepository.deleteById(bookingId);
+    }
+
+    @Override
+    public BookingDTO processPayment(Long bookingId, PaymentMethod method, String adminName) {
+        //Lấy booking
+        BookingsEntity booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new BookingException("Booking must be confirmed before payment");
+        }
+
+        if (booking.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new BookingException("Booking already paid");
+        }
+
+        //Tạo transaction (booking 1-1)
+        TransactionEntity tx = new TransactionEntity();
+
+        tx.setTransactionDate(LocalDate.now());
+        tx.setPaymentMethod(method);
+        tx.setBooking(booking);
+        tx.setAmount(booking.getTotalAmount());
+        tx.setCreateBy(adminName);
+        transactionRepository.save(tx);
+
+        //Cập nhật trạng thái thanh toán của booking
+        booking.setPaymentStatus(PaymentStatus.PAID);
+        booking.setTransaction(tx);
+
+        bookingRepository.save(booking);
+
+        return BookingMapper.toBookingDTO(booking);
+    }
+
+    @Override
+    public BookingDTO getBookingByIdForAdmin(Long bookingId) {
+        BookingsEntity booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingException("Booking not found"));
+
+        return BookingMapper.toBookingDTO(booking);
     }
 
 }

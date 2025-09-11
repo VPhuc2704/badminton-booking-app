@@ -3,6 +3,7 @@ package org.badmintonchain.service;
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.enums.BookingStatus;
+import org.badmintonchain.model.enums.PaymentMethod;
 
 import java.util.List;
 
@@ -14,4 +15,7 @@ public interface BookingService {
     PageResponse<BookingDTO> getAllBookings(int page, int size);
     BookingDTO updateBookingStatus(Long bookingId, BookingStatus newStatus );
     void deleteBooking(Long bookingId);
+
+    BookingDTO processPayment(Long bookingId, PaymentMethod method,String adminName);
+    BookingDTO getBookingByIdForAdmin(Long bookingId);
 }

@@ -2,6 +2,7 @@ package org.badmintonchain.service.impl;
 
 import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.CustomerUserDTO;
+import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.entity.CustomerEntity;
 import org.badmintonchain.model.entity.UsersEntity;
 import org.badmintonchain.model.enums.RoleName;
@@ -30,12 +31,43 @@ public class CustomerServiceImpl implements CustomerService {
     private BookingRepository  bookingRepository;
 
     @Override
-    public Page<CustomerUserDTO> getAllUsers(int page, int size, String keyword, Boolean isActive) {
+    public PageResponse<CustomerUserDTO> getAllUsers(int page, int size, String keyword, Boolean isActive) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
-        Page<UsersEntity> users = userRepository.findAll(pageable);
+//        Page<UsersEntity> users = userRepository.findAll(pageable);
 
-        return users.map(this::toDTO);
+        Page<UsersEntity> users = userRepository.findAllCustomers(RoleName.CUSTOMER, keyword != null ?  keyword : "" , isActive, pageable);
+
+
+        Page<CustomerUserDTO> dtoPage = users.map(this::toDTO);
+
+        return new PageResponse<>(
+                dtoPage.getContent(),
+                dtoPage.getNumber(),
+                dtoPage.getSize(),
+                dtoPage.getTotalElements(),
+                dtoPage.getTotalPages(),
+                dtoPage.isFirst(),
+                dtoPage.isLast()
+        );
+    }
+
+    public PageResponse<CustomerUserDTO> getAllAdmins(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+
+        Page<UsersEntity> users = userRepository.findAllByRoleName(RoleName.ADMIN, pageable);
+
+        Page<CustomerUserDTO> dtoPage = users.map(this::toDTO);
+
+        return new PageResponse<>(
+                dtoPage.getContent(),
+                dtoPage.getNumber(),
+                dtoPage.getSize(),
+                dtoPage.getTotalElements(),
+                dtoPage.getTotalPages(),
+                dtoPage.isFirst(),
+                dtoPage.isLast()
+        );
     }
 
     @Override
@@ -56,9 +88,9 @@ public class CustomerServiceImpl implements CustomerService {
             if (request.getFullName() != null) {
                 user.setFullName(request.getFullName());
             }
-            if (request.getEmail() != null) {
-                user.setEmail(request.getEmail());
-            }
+//            if (request.getEmail() != null) {
+//                user.setEmail(request.getEmail());
+//            }
         }
 
         // --- ADMIN có thể update tất cả ---
@@ -66,9 +98,9 @@ public class CustomerServiceImpl implements CustomerService {
             if (request.getFullName() != null) {
                 user.setFullName(request.getFullName());
             }
-            if (request.getEmail() != null) {
-                user.setEmail(request.getEmail());
-            }
+//            if (request.getEmail() != null) {
+//                user.setEmail(request.getEmail());
+//            }
             if (request.getActive() != null) {
                 user.setActive(request.getActive());
             }

@@ -60,7 +60,9 @@ public class SecurityConfig {
                 }).httpBasic(Customizer.withDefaults());
 
         http.exceptionHandling( exception -> exception
-                .authenticationEntryPoint(authenticationEntryPoint));
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(authenticationEntryPoint)
+        );
 
         http.addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

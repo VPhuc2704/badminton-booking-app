@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.badmintonchain.model.enums.CourtStatus;
+import org.badmintonchain.model.enums.CourtType;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -39,8 +40,9 @@ public class CourtEntity extends BaseEntity {
         @Column(name = "court_name", nullable = false, length = 100)
         private String courtName;
 
+        @Enumerated(EnumType.STRING)
         @Column(name = "court_type", length = 50) // indoor, outdoor
-        private String courtType;
+        private CourtType courtType;
 
         @Column(name = "hourly_rate", precision =  10, scale = 2)
         private BigDecimal hourlyRate;
@@ -57,6 +59,7 @@ public class CourtEntity extends BaseEntity {
         private Boolean isActive = true;
 
         @Enumerated(EnumType.STRING)
-        private CourtStatus status;
+        @Column(name = "status", nullable = false)
+        private CourtStatus status =  CourtStatus.AVAILABLE;
 
 }

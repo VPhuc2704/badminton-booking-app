@@ -91,7 +91,7 @@ public class BookingServiceImpl implements BookingService {
                 user.getEmail(),
                 user.getFullName(),
                 court.getCourtName(),
-                court.getCourtType(),
+                court.getCourtType().name(),
                 saved.getBookingDate(),
                 saved.getStartTime(),
                 saved.getEndTime(),

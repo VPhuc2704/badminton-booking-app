@@ -4,6 +4,7 @@ import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.entity.BookingsEntity;
 import org.badmintonchain.model.entity.CourtEntity;
 import org.badmintonchain.model.entity.CustomerEntity;
+import org.badmintonchain.model.enums.BookingStatus;
 
 import java.util.UUID;
 
@@ -13,7 +14,7 @@ public class BookingMapper {
     public static BookingDTO toBookingDTO(BookingsEntity bookingEntity) {
         BookingDTO booking = new BookingDTO();
         booking.setId(bookingEntity.getId());
-        booking.setBookingCode(UUID.randomUUID().toString().substring(0, 10));
+        booking.setBookingCode(bookingEntity.getBookingCode());
         booking.setCustomer(
                 CustomerMapper.toCustomerDTO(bookingEntity.getCustomer())
         );
@@ -43,7 +44,9 @@ public class BookingMapper {
         booking.setStartTime(bookingDTO.getStartTime());
         booking.setEndTime(bookingDTO.getEndTime());
         booking.setTotalAmount(bookingDTO.getTotalAmount());
-        booking.setStatus(bookingDTO.getStatus());
+        booking.setStatus(
+                bookingDTO.getStatus() != null ? bookingDTO.getStatus() : BookingStatus.PENDING
+        );
 
         return booking;
     }

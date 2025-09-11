@@ -2,6 +2,7 @@ package org.badmintonchain.model.mapper;
 
 import org.badmintonchain.model.dto.CourtDTO;
 import org.badmintonchain.model.entity.CourtEntity;
+import org.badmintonchain.model.enums.CourtStatus;
 
 public class CourtMapper {
     public static CourtDTO toCourtDTO(CourtEntity courtEntity) {
@@ -25,7 +26,7 @@ public class CourtMapper {
         entity.setDescription(dto.getDescription());
         entity.setImages(dto.getImages());
         entity.setIsActive(dto.getIsActive());
-        entity.setStatus(dto.getStatus());
+        entity.setStatus(dto.getStatus() != null ? dto.getStatus() : CourtStatus.AVAILABLE);
         return entity;
     }
 

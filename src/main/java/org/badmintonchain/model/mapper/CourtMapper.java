@@ -25,7 +25,7 @@ public class CourtMapper {
         entity.setHourlyRate(dto.getHourlyRate());
         entity.setDescription(dto.getDescription());
         entity.setImages(dto.getImages());
-        entity.setIsActive(dto.getIsActive());
+        entity.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : CourtStatus.AVAILABLE);
         return entity;
     }

@@ -1,12 +1,10 @@
 package org.badmintonchain.model.dto;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.badmintonchain.model.enums.CourtStatus;
 import org.badmintonchain.model.enums.CourtType;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -20,7 +18,7 @@ public class CourtDTO {
     private CourtType courtType;
     private BigDecimal hourlyRate;
     private String description;
-    private List<String> images;
+    private List<String> images = new ArrayList<>();
     private Boolean isActive;
     private CourtStatus status;
 }

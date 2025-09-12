@@ -105,7 +105,7 @@ public class CourtServiceImpl implements CourtService {
         if (courtDTO.getDescription() != null) {
             court.setDescription(courtDTO.getDescription());
         }
-        if (courtDTO.getImages() != null) {
+        if (courtDTO.getImages() != null && !courtDTO.getImages().isEmpty()) {
             court.setImages(courtDTO.getImages());
         }
         if (courtDTO.getIsActive() != null) {

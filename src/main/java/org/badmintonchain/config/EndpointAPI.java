@@ -9,7 +9,8 @@ public class EndpointAPI {
             "/api/auth/verify",
             "/api/courts/**",
             "/api/quotations/send",
-            "/api/chat"
+            "/api/chat",
+            "/court/img/**"
     };
 
     public  static final String[] PRIVATE_ENDPOINTS = {

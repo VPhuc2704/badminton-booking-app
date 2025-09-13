@@ -29,7 +29,7 @@ public class BookingEventListener {
         // 2. Tính thời điểm nhắc nhở
         LocalDateTime bookingDateTime = LocalDateTime.of(event.getBookingDate(), event.getStartTime());
         long delayMillis = Duration.between(LocalDateTime.now(), bookingDateTime.minusHours(24)).toMillis();
-
+//        long delayMillis = 10_000;
         if (delayMillis > 0) {
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.REMINDER_DELAY_QUEUE,

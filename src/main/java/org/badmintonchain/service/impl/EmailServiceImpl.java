@@ -47,18 +47,24 @@ public class EmailServiceImpl implements EmailService {
         String to = bookingEvent.getUserEmail();
 
         String subject = switch (type){
+            case PENDING        -> "Đặt sân thành công #" + bookingEvent.getBookingCode();
             case CONFIRMATION   -> "Xác nhận đặt sân #" + bookingEvent.getBookingCode();
             case REMINDER       -> "Nhắc nhở lịch đặt sân #" + bookingEvent.getBookingCode();
+            case CANCELLED      -> "Hủy đặt sân #" + bookingEvent.getBookingCode();
         };
 
         String header = switch (type){
+            case PENDING      -> "Đặt sân thành công (chờ xác nhận)";
             case CONFIRMATION ->  "Xác nhận đặt sân thành công";
             case REMINDER     -> "Nhắc nhở lịch đặt sân";
+            case CANCELLED    -> "Lịch đặt sân của bạn đã bị hủy.";
         };
 
         String messageLine = switch (type) {
+            case PENDING      -> "Bạn đã đặt sân thành công, vui lòng chờ admin xác nhận.";
             case CONFIRMATION -> "Bạn đã đặt sân thành công. Thông tin chi tiết như sau:";
             case REMINDER     -> "Đây là lời nhắc: bạn có lịch đặt sân trong vòng 24 giờ tới.";
+            case CANCELLED    -> "Lịch đặt sân của bạn đã bị hủy.";
         };
 
         String body = """

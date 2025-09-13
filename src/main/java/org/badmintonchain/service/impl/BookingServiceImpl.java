@@ -7,11 +7,13 @@ import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.entity.*;
 import org.badmintonchain.model.enums.BookingStatus;
+import org.badmintonchain.model.enums.EmailType;
 import org.badmintonchain.model.enums.PaymentMethod;
 import org.badmintonchain.model.enums.PaymentStatus;
 import org.badmintonchain.model.mapper.BookingMapper;
 import org.badmintonchain.repository.*;
 import org.badmintonchain.service.BookingService;
+import org.badmintonchain.service.EmailService;
 import org.badmintonchain.service.event.BookingCreatedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -46,6 +48,8 @@ public class BookingServiceImpl implements BookingService {
     private ApplicationEventPublisher eventPublisher;
     @Autowired
     private TransactionRepository transactionRepository;
+    @Autowired
+    private EmailService emailService;
 
 
     @Override
@@ -89,7 +93,8 @@ public class BookingServiceImpl implements BookingService {
         // 7. Lưu booking vào DB
         BookingsEntity saved = bookingRepository.save(booking);
 
-        eventPublisher.publishEvent(new BookingCreatedEvent(
+//        eventPublisher.publishEvent(new BookingCreatedEvent(
+        BookingCreatedEvent event = new BookingCreatedEvent(
                 saved.getId(),
                 saved.getBookingCode(),
                 user.getEmail(),
@@ -101,8 +106,8 @@ public class BookingServiceImpl implements BookingService {
                 saved.getEndTime(),
                 saved.getTotalAmount(),
                 customer.getNumberPhone()
-        ));
-
+        );
+        emailService.sendBookingEmail(event, EmailType.PENDING);
         return BookingMapper.toBookingDTO(saved);
     }
 
@@ -148,20 +153,47 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingDTO cancelBooking(Long bookingId, Long userId) {
         BookingsEntity booking = bookingRepository.findByIdAndCustomer_Users_Id(bookingId, userId);
-        if (booking == null) throw new BookingException("Booking not found or unauthorized");
+        if (booking == null) {
+            throw new BookingException("Booking not found or unauthorized");
+        }
 
-        // kiểm tra thời gian
-        LocalDateTime bookingDateTime = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+        // Kiểm tra thời gian
+        LocalDateTime bookingDateTime = LocalDateTime.of(
+                booking.getBookingDate(),
+                booking.getStartTime()
+        );
         if (bookingDateTime.isBefore(LocalDateTime.now())) {
             throw new BookingException("Cannot cancel past bookings");
         }
 
-        if (booking.getStatus() == BookingStatus.CANCELLED ||  booking.getStatus() == BookingStatus.CONFIRMED) {
+        // Kiểm tra trạng thái
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
             throw new BookingException("Booking already cancelled");
         }
+        if (booking.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new BookingException("Cannot cancel a paid booking");
+        }
 
+        //Cập nhật trạng thái
         booking.setStatus(BookingStatus.CANCELLED);
-        BookingsEntity  saved =bookingRepository.save(booking);
+        booking.setPaymentStatus(PaymentStatus.UNPAID); // giữ nguyên unpaid
+        BookingsEntity saved = bookingRepository.save(booking);
+
+        //Gửi email thông báo hủy
+        BookingCreatedEvent event = new BookingCreatedEvent(
+                saved.getId(),
+                saved.getBookingCode(),
+                booking.getCustomer().getUsers().getEmail(),
+                booking.getCustomer().getUsers().getFullName(),
+                booking.getCourt().getCourtName(),
+                booking.getCourt().getCourtType().name(),
+                saved.getBookingDate(),
+                saved.getStartTime(),
+                saved.getEndTime(),
+                saved.getTotalAmount(),
+                booking.getCustomer().getNumberPhone()
+        );
+        emailService.sendBookingEmail(event, EmailType.CANCELLED);
 
         return BookingMapper.toBookingDTO(saved);
     }
@@ -198,6 +230,21 @@ public class BookingServiceImpl implements BookingService {
         booking.setStatus(newStatus);
         bookingRepository.save(booking);
 
+        if (newStatus == BookingStatus.CONFIRMED) {
+            eventPublisher.publishEvent(new BookingCreatedEvent(
+                    booking.getId(),
+                    booking.getBookingCode(),
+                    booking.getCustomer().getUsers().getEmail(),
+                    booking.getCustomer().getUsers().getFullName(),
+                    booking.getCourt().getCourtName(),
+                    booking.getCourt().getCourtType().name(),
+                    booking.getBookingDate(),
+                    booking.getStartTime(),
+                    booking.getEndTime(),
+                    booking.getTotalAmount(),
+                    booking.getCustomer().getNumberPhone()
+            ));
+        }
         return BookingMapper.toBookingDTO(booking);
     }
 

@@ -2,6 +2,7 @@ package org.badmintonchain.service;
 
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
+import org.badmintonchain.model.dto.requests.AdminCreateBookingDTO;
 import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.enums.PaymentMethod;
 
@@ -18,4 +19,6 @@ public interface BookingService {
 
     BookingDTO processPayment(Long bookingId, PaymentMethod method,String adminName);
     BookingDTO getBookingByIdForAdmin(Long bookingId);
+
+    BookingDTO createBookingByAdmin(AdminCreateBookingDTO bookingRequest);
 }

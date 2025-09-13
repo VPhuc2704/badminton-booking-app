@@ -3,6 +3,7 @@ package org.badmintonchain.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
+import org.badmintonchain.model.dto.requests.AdminCreateBookingDTO;
 import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.enums.PaymentMethod;
 import org.badmintonchain.security.CustomUserDetails;
@@ -28,6 +29,16 @@ public class BookingController {
     public ResponseEntity<ApiResponse<BookingDTO>> createBooking(@AuthenticationPrincipal CustomUserDetails currentUser,
                                                                 @RequestBody BookingDTO request,
                                                                  HttpServletRequest httpServletRequest) {
+        if (request.getEndTime().isBefore(request.getStartTime()) || request.getEndTime().equals(request.getStartTime())) {
+            ApiResponse<BookingDTO> errorResponse = new ApiResponse<>(
+                    "End time must be after start time",
+                    HttpStatus.BAD_REQUEST.value(),
+                    null,
+                    httpServletRequest.getRequestURI()
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         BookingDTO booking = bookingService.createBoking(request, currentUser.getUser().getId());
 
         ApiResponse<BookingDTO> response = new ApiResponse<>(
@@ -123,6 +134,32 @@ public class BookingController {
         );
     }
 
+    @PostMapping("/admin/bookings")
+    public ResponseEntity<ApiResponse<BookingDTO>> createBookingForUser(@RequestBody AdminCreateBookingDTO request,
+                                                                        HttpServletRequest httpServletRequest) {
+
+        if (request.getEndTime().isBefore(request.getStartTime()) ||
+                request.getEndTime().equals(request.getStartTime())) {
+            ApiResponse<BookingDTO> errorResponse = new ApiResponse<>(
+                    "End time must be after start time",
+                    HttpStatus.BAD_REQUEST.value(),
+                    null,
+                    httpServletRequest.getRequestURI()
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        BookingDTO createdBooking = bookingService.createBookingByAdmin(request);
+
+        ApiResponse<BookingDTO> response = new ApiResponse<>(
+                "Booking created successfully",
+                HttpStatus.OK.value(),
+                createdBooking,
+                httpServletRequest.getRequestURI()
+        );
+        return ResponseEntity.ok(response);
+    }
+
 
     @PutMapping("/admin/bookings/{id}/status")
     public ResponseEntity<ApiResponse<BookingDTO>> confirmBooking(
@@ -154,6 +191,8 @@ public class BookingController {
                                                               @PathVariable("bookingId") Long bookingId,
                                                               @RequestParam PaymentMethod method,
                                                               HttpServletRequest httpServletRequest) {
+
+
         BookingDTO dto = bookingService.processPayment(bookingId, method, currentUser.getUser().getFullName() );
         return ResponseEntity.ok(
                 new ApiResponse<>(

@@ -5,6 +5,7 @@ import org.badmintonchain.model.entity.BookingsEntity;
 import org.badmintonchain.model.entity.CourtEntity;
 import org.badmintonchain.model.entity.CustomerEntity;
 import org.badmintonchain.model.enums.BookingStatus;
+import org.badmintonchain.utils.GenerateBookingCode;
 
 import java.util.UUID;
 
@@ -28,13 +29,6 @@ public class BookingMapper {
         booking.setStatus(bookingEntity.getStatus());
         booking.setPaymentStatus(bookingEntity.getPaymentStatus());
 
-//        // Gắn thêm transaction info nếu có
-//        TransactionEntity transaction = bookingEntity.getTransaction();
-//        if (transaction != null) {
-//            booking.setPaymentMethod(transaction.getPaymentMethod());
-//            booking.setTransactionDate(transaction.getTransactionDate());
-//        }
-
         return booking;
     }
 
@@ -42,11 +36,7 @@ public class BookingMapper {
     public static BookingsEntity toBookingsEntity(BookingDTO bookingDTO, CustomerEntity customer, CourtEntity court) {
         BookingsEntity booking = new BookingsEntity();
         booking.setId(bookingDTO.getId());
-        booking.setBookingCode(
-                bookingDTO.getBookingCode() != null
-                        ? bookingDTO.getBookingCode()
-                        : UUID.randomUUID().toString().substring(0, 10)
-        );
+        booking.setBookingCode(GenerateBookingCode.generate());
         booking.setCustomer(customer);
         booking.setCourt(court);
         booking.setBookingDate(bookingDTO.getBookingDate());

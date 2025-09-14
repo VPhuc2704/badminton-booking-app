@@ -8,6 +8,8 @@ public class CustomerMapper {
         CustomerDTO customerDTO = new CustomerDTO();
         customerDTO.setCustomerId(customerEntity.getId());
         customerDTO.setNumberPhone(customerEntity.getNumberPhone());
+        customerDTO.setEmail(customerEntity.getUsers().getEmail());
+        customerDTO.setFullname(customerEntity.getUsers().getFullName());
         return  customerDTO;
     }
 

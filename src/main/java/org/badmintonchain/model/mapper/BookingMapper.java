@@ -7,6 +7,7 @@ import org.badmintonchain.model.entity.CustomerEntity;
 import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.utils.GenerateBookingCode;
 
+import java.time.Duration;
 import java.util.UUID;
 
 public class BookingMapper {
@@ -25,10 +26,18 @@ public class BookingMapper {
         booking.setBookingDate(bookingEntity.getBookingDate());
         booking.setStartTime(bookingEntity.getStartTime());
         booking.setEndTime(bookingEntity.getEndTime());
+        long minutes = Duration.between(bookingEntity.getStartTime(), bookingEntity.getEndTime()).toMinutes();
+        booking.setDuration(minutes/60.0);
         booking.setTotalAmount(bookingEntity.getTotalAmount());
         booking.setStatus(bookingEntity.getStatus());
         booking.setPaymentStatus(bookingEntity.getPaymentStatus());
-
+        booking.setPaymentMethod(
+                bookingEntity.getTransaction() != null
+                ? bookingEntity.getTransaction().getPaymentMethod()
+                : null
+        );
+        booking.setCreatedAt(bookingEntity.getCreateAt());
+        booking.setUpdatedAt(bookingEntity.getUpdateAt());
         return booking;
     }
 

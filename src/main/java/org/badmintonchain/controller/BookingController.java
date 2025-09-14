@@ -10,12 +10,14 @@ import org.badmintonchain.security.CustomUserDetails;
 import org.badmintonchain.service.BookingService;
 import org.badmintonchain.utils.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -104,8 +106,11 @@ public class BookingController {
     public ResponseEntity<ApiResponse<PageResponse<BookingDTO>>> getAllBookingsForAdmin(
                                                 @RequestParam(defaultValue = "0") int page,
                                                 @RequestParam(defaultValue = "1") int size,
+                                                @RequestParam(required = false) Integer year,
+                                                @RequestParam(required = false) Integer month,
+                                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate day,
                                                 HttpServletRequest httpServletRequest) {
-        PageResponse<BookingDTO> bookings = bookingService.getAllBookings(page, size);
+        PageResponse<BookingDTO> bookings = bookingService.getAllBookings(page, size, year, month, day);
 
         return ResponseEntity.ok(
                 new ApiResponse<>(

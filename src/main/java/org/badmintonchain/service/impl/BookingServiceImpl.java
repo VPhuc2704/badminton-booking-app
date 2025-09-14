@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -50,6 +51,8 @@ public class BookingServiceImpl implements BookingService {
     private TransactionRepository transactionRepository;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -201,10 +204,10 @@ public class BookingServiceImpl implements BookingService {
 
     // --- ADMIN ---
     @Override
-    public PageResponse<BookingDTO> getAllBookings(int page, int size) {
+    public PageResponse<BookingDTO> getAllBookings(int page, int size, Integer year, Integer month, LocalDate day) {
         Pageable pageable = PageRequest.of(page, size, Sort.by( "bookingDate").descending());
 
-        Page<BookingsEntity> bookings = bookingRepository.findAll(pageable);
+        Page<BookingsEntity> bookings = bookingRepository.findByYearMonthDay(year, month, day, pageable);
 
         List<BookingDTO> bookingDTOs = bookings.getContent()
                 .stream()
@@ -305,8 +308,8 @@ public class BookingServiceImpl implements BookingService {
                 .orElseGet(() -> {
                     UsersEntity u = new UsersEntity();
                     u.setEmail(bookingRequest.getEmail());
-                    u.setFullName(bookingRequest.getEmail());
-                    u.setPasswordHash("123456");
+                    u.setFullName(bookingRequest.getFullName());
+                    u.setPasswordHash(passwordEncoder.encode("123456"));
                     u.setRoleName(RoleName.CUSTOMER);
                     return userRepository.save(u);
                 });
@@ -322,7 +325,7 @@ public class BookingServiceImpl implements BookingService {
         CustomerEntity customer = customerRepository.findByUsersId(user.getId())
                 .orElseGet(() -> {
                     CustomerEntity c = new CustomerEntity();
-                    c.setUsers(user);                 // gán user mới tạo
+                    c.setUsers(user);
                     c.setNumberPhone(bookingRequest.getNumberPhone());
                     return customerRepository.save(c);
                 });

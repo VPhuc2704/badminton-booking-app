@@ -6,6 +6,7 @@ import org.badmintonchain.model.dto.requests.AdminCreateBookingDTO;
 import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.enums.PaymentMethod;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface BookingService {
@@ -13,7 +14,7 @@ public interface BookingService {
     BookingDTO getBookingById(Long bookingId, Long userId);
     List<BookingDTO> getAllBookingByUserId(Long userId);
     BookingDTO cancelBooking(Long bookingId, Long userId);
-    PageResponse<BookingDTO> getAllBookings(int page, int size);
+    PageResponse<BookingDTO> getAllBookings(int page, int size,  Integer year, Integer month, LocalDate day);
     BookingDTO updateBookingStatus(Long bookingId, BookingStatus newStatus );
     void deleteBooking(Long bookingId);
 

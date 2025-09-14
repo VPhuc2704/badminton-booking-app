@@ -13,4 +13,5 @@ public class AdminCreateBookingDTO {
     private LocalTime endTime;
     private String email;
     private String numberPhone;
+    private String fullName;
 }

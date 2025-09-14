@@ -7,6 +7,7 @@ import org.badmintonchain.model.enums.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Data
@@ -18,7 +19,11 @@ public class BookingDTO {
     private LocalDate bookingDate;
     private LocalTime startTime;
     private LocalTime endTime;
+    private Double duration;
     private BookingStatus status;
     private BigDecimal totalAmount;
     private PaymentStatus paymentStatus;
+    private PaymentMethod paymentMethod;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

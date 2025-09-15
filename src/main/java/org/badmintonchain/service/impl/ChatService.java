@@ -334,10 +334,10 @@ public class ChatService {
             double temp = bestMatch.path("main").path("temp").asDouble();
 
             if (description.contains("mưa") || description.contains("giông")) {
-                return String.format("Dự báo lúc %s: %s, %.1f°C. ⚠️ Không nên đặt sân ngoài trời.",
+                return String.format("Dự báo lúc %s: %s, %.1f°C. Không nên đặt sân ngoài trời.",
                         startTime, description, temp);
             } else {
-                return String.format("Dự báo lúc %s: %s, %.1f°C. ✅ Bạn có thể yên tâm đặt sân.",
+                return String.format("Dự báo lúc %s: %s, %.1f°C. Bạn có thể yên tâm đặt sân.",
                         startTime, description, temp);
             }
 

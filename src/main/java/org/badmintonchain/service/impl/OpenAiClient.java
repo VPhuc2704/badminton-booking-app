@@ -112,6 +112,7 @@ public class OpenAiClient {
             JsonNode resp = webClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/v1beta/models/text-embedding-004:batchEmbedContents")
+
                             .queryParam("key", apiKey)
                             .build())
                     .bodyValue(body)

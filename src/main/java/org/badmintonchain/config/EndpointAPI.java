@@ -11,6 +11,7 @@ public class EndpointAPI {
             "/api/quotations/send",
             "/api/chat",
             "/court/img/**"
+//            "api/courts/*/availability"
     };
 
     public  static final String[] PRIVATE_ENDPOINTS = {

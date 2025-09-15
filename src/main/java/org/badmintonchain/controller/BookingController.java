@@ -18,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Controller
@@ -206,5 +207,16 @@ public class BookingController {
                 dto,
                 httpServletRequest.getRequestURI()
         ));
+    }
+
+    @GetMapping("/courts/{courtId}/availability")
+    public ResponseEntity<Boolean> checkAvailability(
+            @PathVariable Long courtId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam LocalTime startTime,
+            @RequestParam LocalTime endTime
+    ) {
+        boolean available = bookingService.isCourtAvailable(courtId, date, startTime, endTime);
+        return ResponseEntity.ok(available);
     }
 }

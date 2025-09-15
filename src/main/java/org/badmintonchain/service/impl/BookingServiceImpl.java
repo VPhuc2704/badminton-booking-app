@@ -375,4 +375,10 @@ public class BookingServiceImpl implements BookingService {
         return BookingMapper.toBookingDTO(saved);
     }
 
+    @Override
+    public boolean isCourtAvailable(Long courtId, LocalDate date, LocalTime startTime, LocalTime endTime) {
+        boolean conflict = bookingRepository.existsConflictingBookings(courtId, date, startTime, endTime);
+        return !conflict;
+    }
+
 }

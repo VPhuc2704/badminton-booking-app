@@ -7,6 +7,7 @@ import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.enums.PaymentMethod;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public interface BookingService {
@@ -22,4 +23,6 @@ public interface BookingService {
     BookingDTO getBookingByIdForAdmin(Long bookingId);
 
     BookingDTO createBookingByAdmin(AdminCreateBookingDTO bookingRequest);
+
+    boolean isCourtAvailable(Long courtId, LocalDate date, LocalTime startTime, LocalTime endTime);
 }

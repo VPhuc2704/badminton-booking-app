@@ -3,6 +3,7 @@ package org.badmintonchain.service.impl;
 import jakarta.transaction.Transactional;
 import org.badmintonchain.exceptions.BookingException;
 import org.badmintonchain.exceptions.CourtException;
+import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.dto.requests.AdminCreateBookingDTO;
@@ -59,7 +60,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingDTO createBoking(BookingDTO bookingRequest,  Long userId) {
         // 1. Xác thực người dùng
         UsersEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsersException("User not found"));
 
         // 2. Lấy thông tin sân
         CourtEntity court = courtRepository.findById(bookingRequest.getCourt().getId())
@@ -136,7 +137,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingDTO getBookingById(Long bookingId, Long userId) {
 
         BookingsEntity bookingsEntity = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BookingException("User not found"));
+                .orElseThrow(() -> new UsersException("User not found"));
 
         // Kiểm tra booking có thuộc user hiện tại không
         if (!bookingsEntity.getCustomer().getUsers().getId().equals(userId)) {

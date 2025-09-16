@@ -1,6 +1,7 @@
 package org.badmintonchain.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.requests.LoginRequestDTO;
 import org.badmintonchain.model.dto.requests.RegisterRequestDTO;
 import org.badmintonchain.model.dto.response.LoginResponse;
@@ -72,10 +73,10 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = tokenProvider.generateRefreshToken(userDetails);
 
         UsersEntity user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UsersException("User not found"));
 
         if (!user.isActive()) {
-            throw new RuntimeException("Account not verified. Please check your email.");
+            throw new UsersException("Account not verified. Please check your email.");
         }
 
         // Save refresh token to database
@@ -96,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UsersEntity createUser(RegisterRequestDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email is already in use");
+            throw new UsersException("Email is already in use");
         }
 
         UsersEntity user = new UsersEntity();
@@ -127,7 +128,7 @@ public class AuthServiceImpl implements AuthService {
 
             // Find user by email
             UsersEntity user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new UsersException("User not found"));
 
             // Revoke refresh token in database
             if (refreshToken != null && !refreshToken.isEmpty()) {
@@ -152,7 +153,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Map<String, Object> refreshToken(String refreshTokenValue) {
         RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenValue)
-                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+                .orElseThrow(() -> new UsersException("Refresh token not found"));
 
         refreshTokenService.verifyExpiration(refreshToken);
 

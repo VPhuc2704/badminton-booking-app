@@ -25,6 +25,4 @@ public interface BookingService {
 
     BookingDTO createBookingByAdmin(AdminCreateBookingDTO bookingRequest);
 
-    boolean isCourtAvailable(Long courtId, LocalDate date, LocalTime startTime, LocalTime endTime);
-    List<AvailabilitySlotDTO> getAvailableSlots(Long courtId, LocalDate date);
 }

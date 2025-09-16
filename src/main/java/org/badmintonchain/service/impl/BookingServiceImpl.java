@@ -380,49 +380,4 @@ public class BookingServiceImpl implements BookingService {
 
         return BookingMapper.toBookingDTO(saved);
     }
-
-    @Override
-    public boolean isCourtAvailable(Long courtId, LocalDate date, LocalTime startTime, LocalTime endTime) {
-        boolean conflict = bookingRepository.existsConflictingBookings(courtId, date, startTime, endTime);
-        return !conflict;
-    }
-
-    public List<AvailabilitySlotDTO> getAvailableSlots(Long courtId, LocalDate date) {
-        // Lấy danh sách booking của sân theo ngày
-        List<BookingsEntity> bookings = bookingRepository
-                .findByCourtIdAndBookingDateAndStatusIn(courtId, date,  Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.PENDING));
-
-        // Nếu chưa có booking, sân trống cả ngày (giả sử 06:00-22:00)
-        List<AvailabilitySlotDTO> slots = new ArrayList<>();
-        LocalTime dayStart = LocalTime.of(6, 0);
-        LocalTime dayEnd = LocalTime.of(22, 0);
-
-        // Sắp xếp theo giờ bắt đầu
-        bookings.sort(Comparator.comparing(BookingsEntity::getStartTime));
-
-        LocalTime current = dayStart;
-        for (BookingsEntity b : bookings) {
-            if (b.getStartTime().isAfter(current)) {
-                slots.add(new AvailabilitySlotDTO(
-                        current.format(DateTimeFormatter.ofPattern("HH:mm")),
-                        b.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))
-                ));
-            }
-            // Cập nhật thời điểm hiện tại
-            if (b.getEndTime().isAfter(current)) {
-                current = b.getEndTime();
-            }
-        }
-
-        // Thêm khoảng cuối ngày nếu còn trống
-        if (current.isBefore(dayEnd)) {
-            slots.add(new AvailabilitySlotDTO(
-                    current.format(DateTimeFormatter.ofPattern("HH:mm")),
-                    dayEnd.format(DateTimeFormatter.ofPattern("HH:mm"))
-            ));
-        }
-
-        return slots;
-    }
-
 }

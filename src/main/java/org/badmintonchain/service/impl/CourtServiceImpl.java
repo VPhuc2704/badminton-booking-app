@@ -2,11 +2,15 @@ package org.badmintonchain.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.badmintonchain.exceptions.CourtException;
+import org.badmintonchain.model.dto.AvailabilitySlotDTO;
 import org.badmintonchain.model.dto.CourtDTO;
 import org.badmintonchain.model.dto.PageResponse;
+import org.badmintonchain.model.entity.BookingsEntity;
 import org.badmintonchain.model.entity.CourtEntity;
+import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.enums.CourtStatus;
 import org.badmintonchain.model.mapper.CourtMapper;
+import org.badmintonchain.repository.BookingRepository;
 import org.badmintonchain.repository.CourtRepository;
 import org.badmintonchain.service.CourtService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +20,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class CourtServiceImpl implements CourtService {
     @Autowired
     private CourtRepository courtRepository;
+    @Autowired
+    private BookingRepository bookingRepository;
 
     // Admin: lấy tất cả sân
     @Override
@@ -129,4 +140,49 @@ public class CourtServiceImpl implements CourtService {
                 .orElseThrow(() -> new CourtException("Court not found"));
         courtRepository.delete(court);
     }
+
+    @Override
+    public boolean isCourtAvailable(Long courtId, LocalDate date, LocalTime startTime, LocalTime endTime) {
+        boolean conflict = bookingRepository.existsConflictingBookings(courtId, date, startTime, endTime);
+        return !conflict;
+    }
+
+    public List<AvailabilitySlotDTO> getAvailableSlots(Long courtId, LocalDate date) {
+        // Lấy danh sách booking của sân theo ngày
+        List<BookingsEntity> bookings = bookingRepository
+                .findByCourtIdAndBookingDateAndStatusIn(courtId, date,  Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.PENDING));
+
+        // Nếu chưa có booking, sân trống cả ngày (giả sử 06:00-22:00)
+        List<AvailabilitySlotDTO> slots = new ArrayList<>();
+        LocalTime dayStart = LocalTime.of(6, 0);
+        LocalTime dayEnd = LocalTime.of(22, 0);
+
+        // Sắp xếp theo giờ bắt đầu
+        bookings.sort(Comparator.comparing(BookingsEntity::getStartTime));
+
+        LocalTime current = dayStart;
+        for (BookingsEntity b : bookings) {
+            if (b.getStartTime().isAfter(current)) {
+                slots.add(new AvailabilitySlotDTO(
+                        current.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        b.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))
+                ));
+            }
+            // Cập nhật thời điểm hiện tại
+            if (b.getEndTime().isAfter(current)) {
+                current = b.getEndTime();
+            }
+        }
+
+        // Thêm khoảng cuối ngày nếu còn trống
+        if (current.isBefore(dayEnd)) {
+            slots.add(new AvailabilitySlotDTO(
+                    current.format(DateTimeFormatter.ofPattern("HH:mm")),
+                    dayEnd.format(DateTimeFormatter.ofPattern("HH:mm"))
+            ));
+        }
+
+        return slots;
+    }
+
 }

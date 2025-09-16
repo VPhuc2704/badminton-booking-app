@@ -2,11 +2,13 @@ package org.badmintonchain.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import org.badmintonchain.model.dto.AvailabilitySlotDTO;
 import org.badmintonchain.model.dto.CourtDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.service.CourtService;
 import org.badmintonchain.utils.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -20,6 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -206,5 +211,28 @@ public class CourtController {
             Files.copy(is, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
         return "/court/img/" + newFileName;
+    }
+
+    @GetMapping("/api/courts/{courtId}/availability")
+    public ResponseEntity<Boolean> checkAvailability(@PathVariable Long courtId,
+                                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                                     @RequestParam LocalTime startTime,
+                                                     @RequestParam LocalTime endTime) {
+        boolean available = courtService.isCourtAvailable(courtId, date, startTime, endTime);
+        return ResponseEntity.ok(available);
+    }
+
+    @GetMapping("/api/courts/{courtId}/availabilitySlots")
+    public ResponseEntity<List<AvailabilitySlotDTO>> getAvailabilitySlots(@PathVariable Long courtId,
+                                                                          @RequestParam String date) {
+        LocalDate targetDate;
+        try {
+            targetDate = LocalDate.parse(date);
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<AvailabilitySlotDTO> slots = courtService.getAvailableSlots(courtId, targetDate);
+        return ResponseEntity.ok(slots);
     }
 }

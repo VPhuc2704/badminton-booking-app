@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.sql.SQLOutput;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -394,6 +395,7 @@ public class ChatService {
                     .buildAndExpand(courtId)
                     .toUriString();
 
+            System.out.println("url: " + url);
             JsonNode slots = restTemplate.getForObject(url, JsonNode.class);
 
             LocalTime start = LocalTime.parse(startTime);

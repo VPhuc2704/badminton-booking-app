@@ -1,5 +1,6 @@
 package org.badmintonchain.service;
 
+import org.badmintonchain.model.dto.AvailabilitySlotDTO;
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.dto.requests.AdminCreateBookingDTO;
@@ -25,4 +26,5 @@ public interface BookingService {
     BookingDTO createBookingByAdmin(AdminCreateBookingDTO bookingRequest);
 
     boolean isCourtAvailable(Long courtId, LocalDate date, LocalTime startTime, LocalTime endTime);
+    List<AvailabilitySlotDTO> getAvailableSlots(Long courtId, LocalDate date);
 }

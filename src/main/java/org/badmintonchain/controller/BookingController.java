@@ -1,6 +1,7 @@
 package org.badmintonchain.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.badmintonchain.model.dto.AvailabilitySlotDTO;
 import org.badmintonchain.model.dto.BookingDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.dto.requests.AdminCreateBookingDTO;
@@ -8,6 +9,7 @@ import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.enums.PaymentMethod;
 import org.badmintonchain.security.CustomUserDetails;
 import org.badmintonchain.service.BookingService;
+import org.badmintonchain.service.CourtService;
 import org.badmintonchain.utils.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Controller
@@ -26,6 +29,8 @@ import java.util.List;
 public class BookingController {
     @Autowired
     private BookingService bookingService;
+    @Autowired
+    private CourtService courtService;
 
     // ---------- USER ----------
     @PostMapping("/bookings")
@@ -211,13 +216,25 @@ public class BookingController {
     }
 
     @GetMapping("/courts/{courtId}/availability")
-    public ResponseEntity<Boolean> checkAvailability(
-            @PathVariable Long courtId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam LocalTime startTime,
-            @RequestParam LocalTime endTime
-    ) {
+    public ResponseEntity<Boolean> checkAvailability(@PathVariable Long courtId,
+                                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                                     @RequestParam LocalTime startTime,
+                                                     @RequestParam LocalTime endTime) {
         boolean available = bookingService.isCourtAvailable(courtId, date, startTime, endTime);
         return ResponseEntity.ok(available);
+    }
+
+    @GetMapping("/courts/{courtId}/availabilitySlots")
+    public ResponseEntity<List<AvailabilitySlotDTO>> getAvailabilitySlots(@PathVariable Long courtId,
+                                                                          @RequestParam String date) {
+        LocalDate targetDate;
+        try {
+            targetDate = LocalDate.parse(date);
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<AvailabilitySlotDTO> slots = bookingService.getAvailableSlots(courtId, targetDate);
+        return ResponseEntity.ok(slots);
     }
 }

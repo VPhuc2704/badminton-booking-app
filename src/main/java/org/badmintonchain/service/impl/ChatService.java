@@ -45,8 +45,6 @@ public class ChatService {
         - "ngày mai" = ngày hiện tại + 1
         - "ngày mốt" = ngày hiện tại + 2
         - "thứ 2, thứ 3..." = thứ trong tuần này hoặc tuần sau
-        - Nếu không có giờ cụ thể, mặc định 08:00-10:00
-        - Nếu chỉ có giờ bắt đầu, thêm 2 tiếng cho giờ kết thúc
         
         Nếu không phải kiểm tra sân, trả về: {"intent":"normal"}
         
@@ -64,13 +62,22 @@ public class ChatService {
                 // Trích xuất thông tin với validation
                 Long courtId = extractCourtId(intentNode);
                 String date = extractAndValidateDate(intentNode, question);
-                String startTime = extractAndValidateTime(intentNode, "startTime", "08:00");
-                String endTime = extractAndValidateTime(intentNode, "endTime",
-                        calculateDefaultEndTime(startTime));
+                String startTime = extractAndValidateTime(intentNode, "startTime");
+                String endTime = extractAndValidateTime(intentNode, "endTime");
+
 
                 if (courtId == null) {
                     return "Vui lòng chỉ rõ số sân cần kiểm tra (ví dụ: sân 1, sân 2).";
                 }
+
+                if (startTime == null) {
+                    return "Vui lòng cho biết giờ bắt đầu bạn muốn đặt sân (ví dụ: 09:00).";
+                }
+
+                log.info("AI trả endTime: {}", endTime);
+                endTime = calculateEndTimeBasedOnAvailability(courtId, date, startTime);
+                log.info("EndTime sau khi tính từ availability: {}", endTime);
+
 
                 if (date == null) {
                     return "Vui lòng chỉ rõ ngày cần kiểm tra (ví dụ: hôm nay, ngày mai, 2025-01-01).";
@@ -157,19 +164,19 @@ public class ChatService {
         return validateAndFormatDate(dateStr);
     }
 
+
     private String extractDateFromQuestion(String question) {
         String lowerQuestion = question.toLowerCase();
         LocalDate today = LocalDate.now();
 
-        // Hôm nay
         if (lowerQuestion.contains("hôm nay")) {
             return today.toString();
         }
-        // Ngày mai
+
         if (lowerQuestion.contains("ngày mai")) {
             return today.plusDays(1).toString();
         }
-        // Ngày mốt
+
         if (lowerQuestion.contains("ngày mốt")) {
             return today.plusDays(2).toString();
         }
@@ -231,6 +238,7 @@ public class ChatService {
         return null;
     }
 
+
     private String validateAndFormatDate(String dateStr) {
         LocalDate today = LocalDate.now();
         if (dateStr == null || dateStr.isEmpty() || "null".equals(dateStr)) {
@@ -250,36 +258,25 @@ public class ChatService {
         }
     }
 
-    private String extractAndValidateTime(JsonNode node, String field, String defaultValue) {
-        String timeStr = defaultValue;
 
+    private String extractAndValidateTime(JsonNode node, String field) {
         if (node.has(field) && !node.get(field).isNull()) {
-            timeStr = node.get(field).asText();
+            String timeStr = node.get(field).asText();
+            timeStr = timeStr.trim();
+            if (!timeStr.isEmpty()) {
+                return validateAndFormatTime(timeStr);
+            }
         }
-
-        return validateAndFormatTime(timeStr, defaultValue);
+        return null; // không có giờ, sẽ yêu cầu user nhập
     }
 
-    private String validateAndFormatTime(String timeStr, String defaultValue) {
-        if (timeStr == null || timeStr.isEmpty() || "null".equals(timeStr)) {
-            return defaultValue;
-        }
-
+    private String validateAndFormatTime(String timeStr) {
         try {
             LocalTime time = LocalTime.parse(timeStr);
             return time.format(DateTimeFormatter.ofPattern("HH:mm"));
         } catch (DateTimeParseException e) {
             log.warn("Invalid time format: " + timeStr);
-            return defaultValue;
-        }
-    }
-
-    private String calculateDefaultEndTime(String startTime) {
-        try {
-            LocalTime start = LocalTime.parse(startTime);
-            return start.plusHours(2).format(DateTimeFormatter.ofPattern("HH:mm"));
-        } catch (Exception e) {
-            return "10:00";
+            return null;
         }
     }
 
@@ -345,6 +342,22 @@ public class ChatService {
 
     private String checkCourtAvailability(Long courtId, String date, String startTime, String endTime) {
             try {
+                LocalTime start = LocalTime.parse(startTime);
+                LocalTime opening = LocalTime.of(6, 0);
+                LocalTime closing = LocalTime.of(22, 0);
+
+                if (start.isBefore(opening) || start.isAfter(closing)) {
+                    return String.format(
+                            "Xin lỗi, sân chỉ hoạt động từ 06:00 đến 22:00. Vui lòng chọn giờ trong khoảng này."
+                    );
+                }
+
+                // Nếu endTime vượt quá 22:00 thì điều chỉnh
+                LocalTime end = LocalTime.parse(endTime);
+                if (end.isAfter(closing)) {
+                    endTime = closing.format(DateTimeFormatter.ofPattern("HH:mm"));
+                }
+
                 String url = UriComponentsBuilder.fromHttpUrl("http://localhost:8080/api/courts/{courtId}/availability")
                         .queryParam("date", date)
                         .queryParam("startTime", startTime)
@@ -372,6 +385,56 @@ public class ChatService {
                 return "Có lỗi xảy ra khi kiểm tra tình trạng sân. Vui lòng thử lại sau.";
             }
     }
+
+    private String calculateEndTimeBasedOnAvailability(Long courtId, String date, String startTime) {
+        try {
+            String url = UriComponentsBuilder
+                    .fromHttpUrl("http://localhost:8080/api/courts/{courtId}/availabilitySlots")
+                    .queryParam("date", date)
+                    .buildAndExpand(courtId)
+                    .toUriString();
+
+            JsonNode slots = restTemplate.getForObject(url, JsonNode.class);
+
+            LocalTime start = LocalTime.parse(startTime);
+
+            LocalTime nearestBusy = null;
+
+            if (slots != null && slots.isArray()) {
+                for (JsonNode slot : slots) {
+                    LocalTime slotStart = LocalTime.parse(slot.get("startTime").asText());
+                    LocalTime slotEnd = LocalTime.parse(slot.get("endTime").asText());
+
+                    if (slotEnd.isBefore(start) || slotEnd.equals(start)) {
+                        continue; // Slot kết thúc trước startTime → bỏ qua
+                    }
+
+                    if (slotStart.isAfter(start)) {
+                        nearestBusy = slotStart;
+                        break; // Slot bận đầu tiên sau start
+                    }
+
+                    if (!slotStart.isAfter(start) && slotEnd.isAfter(start)) {
+                        nearestBusy = slotEnd; // Start nằm trong slot bận
+                        break;
+                    }
+                }
+            }
+
+            if (nearestBusy != null) {
+                return nearestBusy.format(DateTimeFormatter.ofPattern("HH:mm"));
+            } else {
+                // Nếu không có slot nào sau start → trả đến cuối ngày
+                return "22:00";
+            }
+
+        } catch (Exception e) {
+            log.error("Lỗi khi tính endTime theo availability: ", e);
+            return startTime; // fallback an toàn
+        }
+    }
+
+
 }
 
 

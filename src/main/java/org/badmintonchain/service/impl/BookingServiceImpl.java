@@ -204,10 +204,10 @@ public class BookingServiceImpl implements BookingService {
 
     // --- ADMIN ---
     @Override
-    public PageResponse<BookingDTO> getAllBookings(int page, int size, Integer year, Integer month, LocalDate day) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by( "bookingDate").descending());
+    public PageResponse<BookingDTO> getAllBookings(int page, int size, Integer year, Integer month,Integer week ,LocalDate day) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by( "booking_date").descending());
 
-        Page<BookingsEntity> bookings = bookingRepository.findByYearMonthDay(year, month, day, pageable);
+        Page<BookingsEntity> bookings = bookingRepository.findByYearMonthDay(year, month, week, day, pageable);
 
         List<BookingDTO> bookingDTOs = bookings.getContent()
                 .stream()

@@ -27,27 +27,28 @@ public class ServicesManager {
         );
     }
 
-//    @PostConstruct
-//    public void initEmbeddings(){
-//        List<ServicesEntity> allServices = repo.findAll();
-//
-//        for(ServicesEntity s : allServices){
-//            String text = String.format(
-//                    "Dịch vụ: %s. Loại: %s. Giá: %s VND. Mô tả: %s.",
-//                    s.getServiceName(),
-//                    s.getServiceType() != null ? s.getServiceType() : "Không rõ",
-//                    s.getUnitPrice().toPlainString(),
-//                    s.getDescription() != null ? s.getDescription() : "Không có"
-//            );
-//            float[] embedding = openAiClient.createEmbedding(text);
-//
-//            jdbcTemplate.update("""
-//                INSERT INTO document_chunks (id, chunk_text, metadata, embedding)
-//                VALUES (gen_random_uuid(), ?, ?::jsonb, ?::vector)
-//            """, text, "{\"source\":\"services\",\"serviceId\":\"" + s.getId() + "\"}", embedding);
-//
-//        }
-//    }
+    @PostConstruct
+    public void initEmbeddings() {
+        List<ServicesEntity> allServices = repo.findAll();
+
+        for (ServicesEntity s : allServices) {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM document_chunks WHERE metadata->>'serviceId' = ?",
+                    Integer.class, s.getId().toString()
+            );
+
+            if (count != null && count == 0) {
+                String text = toText(s);
+                float[] embedding = openAiClient.createEmbedding(text);
+
+                jdbcTemplate.update("""
+                    INSERT INTO document_chunks (id, chunk_text, metadata, embedding)
+                    VALUES (gen_random_uuid(), ?, ?::jsonb, ?::vector)
+                """, text, "{\"source\":\"services\",\"serviceId\":\"" + s.getId() + "\"}", embedding);
+            }
+        }
+    }
+
 
 
     public ServicesEntity createOrUpdate(ServicesEntity s) {

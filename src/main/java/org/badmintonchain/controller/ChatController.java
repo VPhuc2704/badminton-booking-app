@@ -1,7 +1,10 @@
 package org.badmintonchain.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.badmintonchain.service.impl.ChatService;
+import org.badmintonchain.utils.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,9 +20,19 @@ public class ChatController {
     private final ChatService chatService;
 
     @PostMapping
-    public ResponseEntity<String> ask(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Object>> ask(@RequestBody Map<String, String> body,
+                                                   HttpServletRequest request) {
         String question = body.get("question");
-        String answer = chatService.chat(question);
-        return ResponseEntity.ok(answer);
+        Object answer = chatService.chat(question);
+
+        ApiResponse<Object> response  = new ApiResponse<>(
+                "Success",
+                HttpStatus.OK.value(),
+                answer,
+                request.getRequestURI()
+        );
+        return ResponseEntity.ok(response );
     }
+
+
 }

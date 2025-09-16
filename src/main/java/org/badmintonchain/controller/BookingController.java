@@ -106,12 +106,13 @@ public class BookingController {
     @GetMapping("/admin/bookings")
     public ResponseEntity<ApiResponse<PageResponse<BookingDTO>>> getAllBookingsForAdmin(
                                                 @RequestParam(defaultValue = "0") int page,
-                                                @RequestParam(defaultValue = "1") int size,
+                                                @RequestParam(defaultValue = "100") int size,
                                                 @RequestParam(required = false) Integer year,
                                                 @RequestParam(required = false) Integer month,
+                                                @RequestParam(required = false) Integer week,
                                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate day,
                                                 HttpServletRequest httpServletRequest) {
-        PageResponse<BookingDTO> bookings = bookingService.getAllBookings(page, size, year, month, day);
+        PageResponse<BookingDTO> bookings = bookingService.getAllBookings(page, size, year, month, week, day);
 
         return ResponseEntity.ok(
                 new ApiResponse<>(

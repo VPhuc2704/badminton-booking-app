@@ -16,21 +16,20 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
 
-    @Query("""
-        SELECT b FROM BookingsEntity b
-        WHERE (:year IS NULL OR EXTRACT(YEAR FROM b.bookingDate) = :year)
-          AND (:month IS NULL OR EXTRACT(MONTH FROM b.bookingDate) = :month)
-          AND ( b.bookingDate = COALESCE(:day, b.bookingDate) )
-    """)
+    @Query(value = """
+        SELECT * FROM bookings b
+        WHERE (:year IS NULL OR EXTRACT(ISOYEAR FROM b.booking_date) = :year)
+          AND (:month IS NULL OR EXTRACT(MONTH FROM b.booking_date) = :month)
+          AND (:week IS NULL OR EXTRACT(WEEK FROM b.booking_date) = :week)
+          AND (:day IS NULL OR b.booking_date = :day)
+        """,
+            nativeQuery = true
+    )
     Page<BookingsEntity> findByYearMonthDay(@Param("year") Integer year,
                                             @Param("month") Integer month,
+                                            @Param("week") Integer week,
                                             @Param("day") LocalDate day,
                                             Pageable pageable);
-
-//    Page<BookingsEntity> findByYearMonthDay(@Param("year") Integer year,
-//                                            @Param("month") Integer month,
-//                                            @Param("day") LocalDate day,
-//                                            Pageable pageable);
 
 
     @Query("SELECT CASE WHEN COUNT(b) > 0 THEN TRUE ELSE FALSE END " +

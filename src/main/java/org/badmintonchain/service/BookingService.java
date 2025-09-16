@@ -15,7 +15,7 @@ public interface BookingService {
     BookingDTO getBookingById(Long bookingId, Long userId);
     List<BookingDTO> getAllBookingByUserId(Long userId);
     BookingDTO cancelBooking(Long bookingId, Long userId);
-    PageResponse<BookingDTO> getAllBookings(int page, int size,  Integer year, Integer month, LocalDate day);
+    PageResponse<BookingDTO> getAllBookings(int page, int size,  Integer year, Integer month, Integer week ,LocalDate day);
     BookingDTO updateBookingStatus(Long bookingId, BookingStatus newStatus );
     void deleteBooking(Long bookingId);
 

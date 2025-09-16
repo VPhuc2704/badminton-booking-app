@@ -21,7 +21,7 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
         WHERE (:year IS NULL OR EXTRACT(ISOYEAR FROM b.booking_date) = :year)
           AND (:month IS NULL OR EXTRACT(MONTH FROM b.booking_date) = :month)
           AND (:week IS NULL OR EXTRACT(WEEK FROM b.booking_date) = :week)
-          AND (:day IS NULL OR b.booking_date = :day)
+          AND (b.booking_date = COALESCE(:day, b.booking_date))
         """,
             nativeQuery = true
     )
@@ -48,7 +48,7 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
     BookingsEntity findByIdAndCustomer_Users_Id(Long id, Long userId);
     Boolean existsByCustomer_Id(Long id);
 
-
+    List<BookingsEntity> findByCourtIdAndBookingDateAndStatusIn(Long courtId, LocalDate date, List<BookingStatus> statuses);
     List<BookingsEntity> findAllByBookingDate(LocalDate date);
     List<BookingsEntity> findAllByBookingDateAndCourt_Id(LocalDate date, Long courtId);
     List<BookingsEntity> findAllByBookingDateAndCourt_IdAndStatus(LocalDate date, Long courtId, BookingStatus status);

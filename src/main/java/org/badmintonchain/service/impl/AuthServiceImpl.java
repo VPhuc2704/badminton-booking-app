@@ -4,11 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.requests.LoginRequestDTO;
 import org.badmintonchain.model.dto.requests.RegisterRequestDTO;
-import org.badmintonchain.model.dto.response.LoginResponse;
+import org.badmintonchain.model.dto.response.UserInfoDTO;
+import org.badmintonchain.model.entity.CustomerEntity;
 import org.badmintonchain.model.entity.RefreshToken;
 import org.badmintonchain.model.entity.UsersEntity;
 import org.badmintonchain.model.entity.VerificationToken;
 import org.badmintonchain.model.enums.RoleName;
+import org.badmintonchain.repository.CustomerRepository;
 import org.badmintonchain.repository.UserRepository;
 import org.badmintonchain.repository.VerificationTokenRepository;
 import org.badmintonchain.security.CustomUserDetails;
@@ -56,6 +58,9 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private CustomerRepository customerRepository;
+
     @Override
     public Map<String, Object> login(LoginRequestDTO request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -95,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UsersEntity createUser(RegisterRequestDTO request) {
+    public UserInfoDTO createUser(RegisterRequestDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UsersException("Email is already in use");
         }
@@ -110,6 +115,11 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
+        CustomerEntity customer = new CustomerEntity();
+        customer.setUsers(user);
+        customer.setNumberPhone(request.getPhone());
+        customerRepository.save(customer);
+
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
@@ -118,7 +128,12 @@ public class AuthServiceImpl implements AuthService {
         verificationTokenRepository.save(verificationToken);
 
         emailService.sendVerificationEmail(user.getEmail(), token);
-        return user;
+        return new UserInfoDTO(
+                user.getFullName(),
+                user.getEmail(),
+                user.getRoleName().name(),
+                customer.getNumberPhone()
+        );
     }
 
     @Override

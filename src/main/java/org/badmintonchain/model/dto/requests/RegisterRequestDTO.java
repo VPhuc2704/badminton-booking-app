@@ -20,7 +20,7 @@ public class RegisterRequestDTO {
     @NotBlank(message = "Full name is required")
     private String fullName;
 
-//    @NotBlank(message = "Phone is required")
-//    @Pattern(regexp = "^[0-9]{10}$", message = "Phone must be 10 digits")
-//    private String phone;
+    @NotBlank(message = "Phone is required")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone must be 10 digits")
+    private String phone;
 }

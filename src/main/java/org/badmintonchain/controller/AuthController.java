@@ -2,6 +2,7 @@ package org.badmintonchain.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.User;
 import org.badmintonchain.model.dto.requests.LoginRequestDTO;
 import org.badmintonchain.model.dto.requests.RegisterRequestDTO;
 import org.badmintonchain.model.dto.response.LoginResponse;
@@ -41,7 +42,8 @@ public class AuthController {
         UserInfoDTO userInfo = new UserInfoDTO(
                 (String) auth.get("fullName"),
                 (String) auth.get("email"),
-                (String) auth.get("role")
+                (String) auth.get("role"),
+                (String) auth.get("numberPhone")
         );
 
         TokenDTO tokens = new TokenDTO(
@@ -64,7 +66,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDTO request) {
         try {
-            UsersEntity user = authService.createUser(request);
+            UserInfoDTO user = authService.createUser(request);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponse<>("User registered successfully. Please check your email to verify account.", 201, user, "/api/auth/register"));
         } catch (Exception e) {
@@ -98,18 +100,6 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Logout failed");
         }
     }
-
-//    private String getRefreshTokenFromRequest(HttpServletRequest request) {
-//        // Try to get refresh token from header
-//        String refreshToken = request.getHeader("X-Refresh-Token");
-//
-//        // If not found in header, you could also get it from request body
-//        // This would require creating a LogoutRequestDTO
-//
-//        return refreshToken;
-//    }
-
-
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {

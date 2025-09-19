@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.badmintonchain.model.entity.CourtEntity;
+import org.badmintonchain.repository.CourtRepository;
+import org.badmintonchain.service.CourtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -26,6 +29,8 @@ public class ChatService {
     private final OpenAiClient openAiClient;
     private final DocumentSearchService documentSearchService;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final CourtRepository courtRepository;
+    private final CourtService courtService;
 
     @Value("${weather.api.key}")
     private String weatherApiKey;
@@ -40,14 +45,15 @@ public class ChatService {
         
         Nếu user hỏi về kiểm tra sân trống, hãy trả về JSON với format:
         {"intent":"checkAvailability","courtId":x,"date":"YYYY-MM-DD","startTime":"HH:mm","endTime":"HH:mm"}
-        
+        Nếu user chỉ nói chung chung "tôi muốn đặt sân" nhưng thiếu thông tin, trả về:
+        {"intent":"bookingRequest","missing":["courtId","date","startTime","endTime"]}
         Lưu ý:
         - "hôm nay" = ngày hiện tại
         - "ngày mai" = ngày hiện tại + 1
         - "ngày mốt" = ngày hiện tại + 2
         - "thứ 2, thứ 3..." = thứ trong tuần này hoặc tuần sau
         
-        Nếu không phải kiểm tra sân, trả về: {"intent":"normal"}
+        Nếu không thuộc các trường hợp trên, trả về: {"intent":"normal"}
         
         Câu hỏi: """ + question;
 
@@ -61,14 +67,19 @@ public class ChatService {
                 }
 
                 // Trích xuất thông tin với validation
-                Long courtId = extractCourtId(intentNode);
+                Long courtId = extractCourtId(intentNode, question);
                 String date = extractAndValidateDate(intentNode, question);
                 String startTime = extractAndValidateTime(intentNode, "startTime");
                 String endTime = extractAndValidateTime(intentNode, "endTime");
 
 
                 if (courtId == null) {
-                    return "Vui lòng chỉ rõ số sân cần kiểm tra (ví dụ: sân 1, sân 2).";
+                    List<String> courtNames = courtRepository.findAll()
+                            .stream()
+                            .map(CourtEntity::getCourtName)
+                            .toList();
+                    return "Xin lỗi, tôi không xác định được sân bạn muốn. Các sân hiện có: "
+                            + String.join(", ", courtNames);
                 }
 
                 if (startTime == null) {
@@ -85,11 +96,12 @@ public class ChatService {
                 }
 
                 return checkCourtAvailability(courtId, date, startTime, endTime);
-
             } catch (Exception e) {
                 log.error("Lỗi khi xử lý intent kiểm tra sân: ", e);
                 return "Xin lỗi, có lỗi khi xử lý yêu cầu kiểm tra sân. Vui lòng thử lại với format rõ ràng hơn.";
             }
+        } else if (intent.contains("\"bookingRequest\"")) {
+            return "Vui lòng cho chúng tôi thêm thông tin. Bạn muốn đặt sân nào, ngày nào và từ mấy giờ?";
         } else {
             // Trường hợp hỏi dịch vụ
             return openAiClient.chatCompletion(
@@ -99,6 +111,7 @@ public class ChatService {
                     - Nếu người dùng hỏi tất cả dịch vụ, hãy liệt kê đầy đủ tên, loại, giá, mô tả.
                     - Nếu người dùng hỏi chi tiết một dịch vụ, chỉ trả lời đúng thông tin dịch vụ đó.
                     - Nếu không thấy thông tin, trả lời: "Xin lỗi, tôi không tìm thấy thông tin trong dữ liệu dịch vụ."
+                    - KHÔNG bịa thêm thông tin.
                     """,
                     context,
                     question
@@ -139,11 +152,19 @@ public class ChatService {
         }
     }
 
-    private Long extractCourtId(JsonNode node) {
+    private Long extractCourtId(JsonNode node, String question) {
+        Long id = null;
+
         if (node.has("courtId") && !node.get("courtId").isNull()) {
-            return node.get("courtId").asLong();
+            id = node.get("courtId").asLong();
         }
-        return null;
+
+        // Nếu id không hợp lệ → map lại từ câu hỏi
+        if (id == null || !courtRepository.existsById(id)) {
+            id = courtService.mapCourtNameToId(question);
+        }
+
+        return (id != null && courtRepository.existsById(id)) ? id : null;
     }
 
     private String extractAndValidateDate(JsonNode node, String originalQuestion) {

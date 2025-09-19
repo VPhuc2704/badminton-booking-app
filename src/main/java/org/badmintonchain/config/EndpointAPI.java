@@ -25,8 +25,8 @@ public class EndpointAPI {
             "/api/admin/bookings/**",
             "/api/admin/users/**",
             "/api/admin/all",
-            "/api/admin/services/*"
-
+            "/api/admin/services/*",
+            "/api/dashboard/**"
     };
 
 }

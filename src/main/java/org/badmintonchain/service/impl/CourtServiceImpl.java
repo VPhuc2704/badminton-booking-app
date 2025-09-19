@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class CourtServiceImpl implements CourtService {
@@ -183,6 +185,32 @@ public class CourtServiceImpl implements CourtService {
         }
 
         return slots;
+    }
+
+    @Override
+    public Long mapCourtNameToId(String userInput) {
+        String lower = userInput.toLowerCase();
+
+        // Regex: tìm "sân cầu lông số X"
+        Pattern p = Pattern.compile("sân(\\s*cầu lông)?\\s*số\\s*(\\d+)");
+        Matcher m = p.matcher(lower);
+        if (m.find()) {
+            int number = Integer.parseInt(m.group(2));
+            // Giả sử id = số sân luôn
+            if (courtRepository.existsById((long) number)) {
+                return (long) number;
+            }
+        }
+
+        // Nếu không match regex → fallback tìm gần giống trong DB
+        List<CourtEntity> courts = courtRepository.findAll();
+        for (CourtEntity court : courts) {
+            if (lower.contains(court.getCourtName().toLowerCase())) {
+                return court.getId();
+            }
+        }
+
+        return null; // Không tìm thấy
     }
 
 }

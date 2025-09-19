@@ -19,4 +19,5 @@ public interface CourtService {
 
     boolean isCourtAvailable(Long courtId, LocalDate date, LocalTime startTime, LocalTime endTime);
     List<AvailabilitySlotDTO> getAvailableSlots(Long courtId, LocalDate date);
+    Long mapCourtNameToId(String userInput);
 }

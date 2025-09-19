@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -53,4 +54,21 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
     List<BookingsEntity> findAllByBookingDate(LocalDate date);
     List<BookingsEntity> findAllByBookingDateAndCourt_Id(LocalDate date, Long courtId);
     List<BookingsEntity> findAllByBookingDateAndCourt_IdAndStatus(LocalDate date, Long courtId, BookingStatus status);
+
+    // Đếm số booking trong 1 ngày
+    long countByBookingDate(LocalDate date);
+
+    // Đếm số booking trong 1 ngày theo status
+    long countByBookingDateAndStatus(LocalDate date, BookingStatus status);
+
+    // Đếm số booking trong 1 tháng
+    @Query("SELECT COUNT(b) FROM BookingsEntity b " +
+            "WHERE MONTH(b.bookingDate) = :month AND YEAR(b.bookingDate) = :year")
+    long countByMonthAndYear(int month, int year);
+
+    // Đếm số booking trong 1 tháng theo status
+    @Query("SELECT COUNT(b) FROM BookingsEntity b " +
+            "WHERE MONTH(b.bookingDate) = :month AND YEAR(b.bookingDate) = :year " +
+            "AND b.status = :status")
+    long countByMonthAndYearAndStatus(int month, int year, BookingStatus status);
 }

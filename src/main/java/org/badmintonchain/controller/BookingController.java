@@ -170,7 +170,7 @@ public class BookingController {
 
 
     @PutMapping("/admin/bookings/{id}/status")
-    public ResponseEntity<ApiResponse<BookingDTO>> confirmBooking(
+    public ResponseEntity<ApiResponse<BookingDTO>> updateBooking(
             @PathVariable("id") Long bookingId,
             @RequestParam BookingStatus newStatus,
             HttpServletRequest httpServletRequest) {

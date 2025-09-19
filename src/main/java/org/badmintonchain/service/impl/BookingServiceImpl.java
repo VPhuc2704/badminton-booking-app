@@ -63,11 +63,16 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDTO createBoking(BookingDTO bookingRequest,  Long userId) {
-        // 1. Xác thực người dùng
+        validateBookingTime(
+                bookingRequest.getBookingDate(),
+                bookingRequest.getStartTime(),
+                bookingRequest.getEndTime()
+        );
+        // Xác thực người dùng
         UsersEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsersException("User not found"));
 
-        // 2. Lấy thông tin sân
+        // Lấy thông tin sân
         CourtEntity court = courtRepository.findById(bookingRequest.getCourt().getId())
                 .orElseThrow(() -> new CourtException("Court not found"));
 
@@ -75,10 +80,10 @@ public class BookingServiceImpl implements BookingService {
             throw new CourtException("Court " + court.getCourtName() + " is not available for booking.");
         }
 
-        // 3. Kiểm tra hoặc tạo mới khách hàng (customer) nếu chưa có
+        // Kiểm tra hoặc tạo mới khách hàng (customer) nếu chưa có
         CustomerEntity customer = getOrCreateCustomer(user, bookingRequest);
 
-        // 4. Kiểm tra xung đột lịch đặt sân
+        // Kiểm tra xung đột lịch đặt sân
         Boolean conflictExists  = bookingRepository.existsConflictingBookings(
                 court.getId(),
                 bookingRequest.getBookingDate(),
@@ -89,17 +94,17 @@ public class BookingServiceImpl implements BookingService {
             throw new CourtException("Court already booked during this time slot!");
         }
 
-        // 5. Tính tổng tiền (dựa trên giờ đặt và giá theo giờ của sân)
+        // Tính tổng tiền (dựa trên giờ đặt và giá theo giờ của sân)
         BigDecimal totalPrice = calculateBookingPrice(court, bookingRequest.getStartTime(), bookingRequest.getEndTime());
 
-        // 6. Chuyển từ DTO → Entity và set thêm thông tin
+        // Chuyển từ DTO → Entity và set thêm thông tin
         BookingsEntity booking = BookingMapper.toBookingsEntity(bookingRequest, customer, court);
         booking.setTotalAmount(totalPrice);
         booking.setStatus(BookingStatus.PENDING);
         booking.setPaymentStatus(PaymentStatus.UNPAID);
 
 
-        // 7. Lưu booking vào DB
+        // Lưu booking vào DB
         BookingsEntity saved = bookingRepository.save(booking);
 
 //        eventPublisher.publishEvent(new BookingCreatedEvent(
@@ -166,23 +171,8 @@ public class BookingServiceImpl implements BookingService {
         if (booking == null) {
             throw new BookingException("Booking not found or unauthorized");
         }
-
-        // Kiểm tra thời gian
-        LocalDateTime bookingDateTime = LocalDateTime.of(
-                booking.getBookingDate(),
-                booking.getStartTime()
-        );
-        if (bookingDateTime.isBefore(LocalDateTime.now())) {
-            throw new BookingException("Cannot cancel past bookings");
-        }
-
-        // Kiểm tra trạng thái
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new BookingException("Booking already cancelled");
-        }
-        if (booking.getPaymentStatus() == PaymentStatus.PAID) {
-            throw new BookingException("Cannot cancel a paid booking");
-        }
+        // kiểm tra trước khi hủy booking
+        validateUserCancelable(booking);
 
         //Cập nhật trạng thái
         booking.setStatus(BookingStatus.CANCELLED);
@@ -237,8 +227,18 @@ public class BookingServiceImpl implements BookingService {
         BookingsEntity booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingException("Booking not found"));
 
+        // Nếu trạng thái không thay đổi thì bỏ qua
+        if (booking.getStatus() == newStatus) {
+            return BookingMapper.toBookingDTO(booking);
+        }
+
+        // Kiem tra truoc khi hủy
+        if (booking.getPaymentStatus() == PaymentStatus.PAID && newStatus == BookingStatus.CANCELLED) {
+            throw new BookingException("Cannot cancel a paid booking");
+        }
+
         booking.setStatus(newStatus);
-        bookingRepository.save(booking);
+        BookingsEntity saved = bookingRepository.save(booking);
 
         if (newStatus == BookingStatus.CONFIRMED) {
             eventPublisher.publishEvent(new BookingCreatedEvent(
@@ -254,11 +254,27 @@ public class BookingServiceImpl implements BookingService {
                     booking.getTotalAmount(),
                     booking.getCustomer().getNumberPhone()
             ));
+        } else if (newStatus == BookingStatus.CANCELLED) {
+            BookingCreatedEvent event = new BookingCreatedEvent(
+                    saved.getId(),
+                    saved.getBookingCode(),
+                    booking.getCustomer().getUsers().getEmail(),
+                    booking.getCustomer().getUsers().getFullName(),
+                    booking.getCourt().getCourtName(),
+                    booking.getCourt().getCourtType().name(),
+                    saved.getBookingDate(),
+                    saved.getStartTime(),
+                    saved.getEndTime(),
+                    saved.getTotalAmount(),
+                    booking.getCustomer().getNumberPhone()
+            );
+            emailService.sendBookingEmail(event, EmailType.CANCELLED);
         }
         return BookingMapper.toBookingDTO(booking);
     }
 
     @Override
+    @Transactional
     public void deleteBooking(Long bookingId) {
         if (!bookingRepository.existsById(bookingId)) {
             throw new RuntimeException("Booking not found");
@@ -310,6 +326,11 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingDTO createBookingByAdmin(AdminCreateBookingDTO bookingRequest) {
+        validateBookingTime(
+                bookingRequest.getBookingDate(),
+                bookingRequest.getStartTime(),
+                bookingRequest.getEndTime()
+        );
         UsersEntity user = userRepository.findByEmail(bookingRequest.getEmail())
                 .orElseGet(() -> {
                     UsersEntity u = new UsersEntity();
@@ -376,8 +397,55 @@ public class BookingServiceImpl implements BookingService {
                 saved.getTotalAmount(),
                 customer.getNumberPhone()
         );
-        emailService.sendBookingEmail(event, EmailType.PENDING);
+        emailService.sendBookingEmail(event, EmailType.CONFIRMATION);
 
         return BookingMapper.toBookingDTO(saved);
     }
+
+
+    private void validateBookingTime(LocalDate bookingDate, LocalTime startTime, LocalTime endTime) {
+        LocalDateTime bookingDateTime = LocalDateTime.of(bookingDate, startTime);
+
+        //Không cho đặt quá khứ
+        if (bookingDateTime.isBefore(LocalDateTime.now())) {
+            throw new BookingException("Cannot create booking in the past");
+        }
+
+        // End time phải sau Start time
+        if (!endTime.isAfter(startTime)) {
+            throw new BookingException("End time must be after start time");
+        }
+
+        //Check giờ hoạt động (06:00 - 22:00)
+        LocalTime OPEN_TIME = LocalTime.of(6, 0);
+        LocalTime CLOSE_TIME = LocalTime.of(22, 0);
+
+        if (startTime.isBefore(OPEN_TIME)) {
+            throw new BookingException("Booking start time must be after 06:00");
+        }
+        if (endTime.isAfter(CLOSE_TIME)) {
+            throw new BookingException("Booking end time must be before 22:00");
+        }
+    }
+
+    private void validateUserCancelable(BookingsEntity booking) {
+        LocalDateTime bookingDateTime = LocalDateTime.of(
+                booking.getBookingDate(),
+                booking.getStartTime()
+        );
+
+        if (bookingDateTime.isBefore(LocalDateTime.now())) {
+            throw new BookingException("Cannot cancel past bookings");
+        }
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new BookingException("Booking already cancelled");
+        }
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            throw new BookingException("Booking already confirmed. Please contact admin.");
+        }
+        if (booking.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new BookingException("Cannot cancel a paid booking");
+        }
+    }
+
 }

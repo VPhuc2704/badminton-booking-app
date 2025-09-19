@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.badmintonchain.model.entity.CourtEntity;
+import org.badmintonchain.model.entity.ServicesEntity;
 import org.badmintonchain.repository.CourtRepository;
+import org.badmintonchain.repository.ServiceRepository;
 import org.badmintonchain.service.CourtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class ChatService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final CourtRepository courtRepository;
     private final CourtService courtService;
+    private final ServiceRepository serviceRepository;
 
     @Value("${weather.api.key}")
     private String weatherApiKey;
@@ -38,15 +41,31 @@ public class ChatService {
     public String chat(String question) {
         float[] queryEmbedding = openAiClient.createEmbedding(question);
         List<String> chunks = documentSearchService.searchRelevantChunks(queryEmbedding, 3);
-        String context = String.join("\n", chunks);
+//        String context = String.join("\n", chunks);
 
         String intentPrompt = """
         Bạn là hệ thống phân loại intent cho sân cầu lông.
         
         Nếu user hỏi về kiểm tra sân trống, hãy trả về JSON với format:
         {"intent":"checkAvailability","courtId":x,"date":"YYYY-MM-DD","startTime":"HH:mm","endTime":"HH:mm"}
+        
         Nếu user chỉ nói chung chung "tôi muốn đặt sân" nhưng thiếu thông tin, trả về:
         {"intent":"bookingRequest","missing":["courtId","date","startTime","endTime"]}
+        
+        Nếu user hỏi muốn đặt sân mà không chỉ rõ, hãy gợi ý các sân trống dựa trên:
+        - Loại sân (indoor/outdoor)
+        - Thời gian phổ biến
+        - Các dịch vụ liên quan (huấn luyện viên, thuê giày, nước uống, bóng...)
+        Trả về JSON với format:
+        {
+            "intent": "suggestion",
+            "suggestedCourts": [
+                {"courtId": x, "courtName": "Sân cầu lông số 1", "type": "INDOOR"},
+                ...
+            ],
+            "suggestedServices": ["Thuê giày", "Nước uống", "HLV"]
+        }
+        
         Lưu ý:
         - "hôm nay" = ngày hiện tại
         - "ngày mai" = ngày hiện tại + 1
@@ -57,7 +76,20 @@ public class ChatService {
         
         Câu hỏi: """ + question;
 
-        String intent = openAiClient.chatCompletion(intentPrompt, "", "");
+        List<CourtEntity> courts = courtRepository.findAll();
+        String courtContext = courts.stream()
+                .map(c -> c.getCourtName() + " (" + c.getCourtType() + ")")
+                .toList().toString();
+
+        List<ServicesEntity> services = serviceRepository.findAll();
+        String serviceContext = services.stream()
+                .map(ServicesEntity::getServiceName)
+                .toList().toString();
+
+        String context = "Danh sách sân: " + courtContext + "\nDịch vụ: " + serviceContext;
+
+
+        String intent = openAiClient.chatCompletion(intentPrompt, context, question);
 
         if (intent.contains("\"checkAvailability\"")) {
             try {
@@ -100,8 +132,28 @@ public class ChatService {
                 log.error("Lỗi khi xử lý intent kiểm tra sân: ", e);
                 return "Xin lỗi, có lỗi khi xử lý yêu cầu kiểm tra sân. Vui lòng thử lại với format rõ ràng hơn.";
             }
-        } else if (intent.contains("\"bookingRequest\"")) {
+        }else if (intent.contains("\"bookingRequest\"")) {
             return "Vui lòng cho chúng tôi thêm thông tin. Bạn muốn đặt sân nào, ngày nào và từ mấy giờ?";
+        }else if (intent.contains("\"suggestion\"")) {
+            JsonNode suggestionNode = parseIntentResponse(intent);
+            StringBuilder sb = new StringBuilder("Mình gợi ý bạn những lựa chọn sau:\n");
+
+            if (suggestionNode.has("suggestedCourts")) {
+                for (JsonNode court : suggestionNode.get("suggestedCourts")) {
+                    sb.append("- Sân ").append(court.get("courtName").asText())
+                            .append(" (").append(court.get("type").asText()).append(")\n");
+                }
+            }
+
+            if (suggestionNode.has("suggestedServices")) {
+                sb.append("Các dịch vụ bạn có thể quan tâm: ");
+                for (JsonNode svc : suggestionNode.get("suggestedServices")) {
+                    sb.append(svc.asText()).append(", ");
+                }
+                sb.setLength(sb.length() - 2); // bỏ dấu , cuối
+            }
+
+            return sb.toString();
         } else {
             // Trường hợp hỏi dịch vụ
             return openAiClient.chatCompletion(

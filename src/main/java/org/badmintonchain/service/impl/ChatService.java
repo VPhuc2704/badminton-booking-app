@@ -140,10 +140,12 @@ public class ChatService {
 
             if (suggestionNode.has("suggestedCourts")) {
                 for (JsonNode court : suggestionNode.get("suggestedCourts")) {
-                    sb.append("- Sân ").append(court.get("courtName").asText())
-                            .append(" (").append(court.get("type").asText()).append(")\n");
+                    String typeVN = mapCourtTypeToVietnamese(court.get("type").asText());
+                    sb.append("- ").append(court.get("courtName").asText())
+                            .append(" (").append(typeVN).append(")\n");
                 }
             }
+
 
             if (suggestionNode.has("suggestedServices")) {
                 sb.append("Các dịch vụ bạn có thể quan tâm: ");
@@ -311,6 +313,16 @@ public class ChatService {
 
         return null;
     }
+
+    private String mapCourtTypeToVietnamese(String courtType) {
+        if (courtType == null) return "";
+        return switch (courtType.toUpperCase()) {
+            case "INDOOR" -> "Trong nhà";
+            case "OUTDOOR" -> "Ngoài trời";
+            default -> courtType;
+        };
+    }
+
 
 
     private String validateAndFormatDate(String dateStr) {

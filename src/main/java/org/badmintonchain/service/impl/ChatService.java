@@ -465,13 +465,25 @@ public class ChatService {
                     return "Không thể kiểm tra tình trạng sân. Vui lòng thử lại sau.";
                 }
 
+                CourtEntity court = courtRepository.findById(courtId).orElse(null);
+                String courtName = (court != null) ? court.getCourtName() : ("Sân " + courtId);
+                String courtType = (court != null) ? mapCourtTypeToVietnamese(court.getCourtType().name()) : "";
+                String priceInfo = (court != null && court.getHourlyRate() != null)
+                        ? String.format("\nGiá: %,.0f VND/giờ", court.getHourlyRate())
+                        : "";
+
                 String availabilityMessage = available
-                        ? String.format("Sân %d trống vào %s từ %s đến %s", courtId, date, startTime, endTime)
-                        : String.format("Xin lỗi, sân %d đã có người đặt vào %s từ %s đến %s",
-                        courtId, date, startTime, endTime);
+                        ? String.format("%s%s trống vào %s từ %s đến %s",
+                            courtName,
+                            courtType.isEmpty() ? "" : " (" + courtType + ")",
+                            date, startTime, endTime)
+                        : String.format("Xin lỗi, %s%s đã có người đặt vào %s từ %s đến %s",
+                            courtName,
+                            courtType.isEmpty() ? "" : " (" + courtType + ")",
+                            date, startTime, endTime);
                 String weatherAdvice = getWeatherAdvice(date, startTime,"1566083");
 
-                return availabilityMessage + "\n" + weatherAdvice;
+                return availabilityMessage + priceInfo + "\n" + weatherAdvice;
 
             } catch (Exception e) {
                 log.error("Lỗi khi gọi API kiểm tra sân: ", e);

@@ -83,8 +83,15 @@ public class ChatService {
 
         List<ServicesEntity> services = serviceRepository.findAll();
         String serviceContext = services.stream()
-                .map(ServicesEntity::getServiceName)
-                .toList().toString();
+                .map(s -> String.format(
+                        "Tên: %s | Loại: %s | Giá: %s | Mô tả: %s",
+                        s.getServiceName(),
+                        s.getServiceType(),
+                        s.getUnitPrice(),
+                        s.getDescription()
+                ))
+                .toList()
+                .toString();
 
         String context = "Danh sách sân: " + courtContext + "\nDịch vụ: " + serviceContext;
 

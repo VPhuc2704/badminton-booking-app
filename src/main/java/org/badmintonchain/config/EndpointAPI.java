@@ -10,7 +10,10 @@ public class EndpointAPI {
             "/api/courts/**",
             "/api/quotations/send",
             "/api/chat",
-            "/court/img/**"
+            "/court/img/**",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-ui.html"
 //            "api/courts/*/availability"
     };
 

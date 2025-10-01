@@ -36,7 +36,7 @@ public class AuthController {
     private VerificationTokenService  verificationTokenService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO request) {
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequestDTO request) {
         Map<String, Object> auth = authService.login(request);
 
         UserInfoDTO userInfo = new UserInfoDTO(
@@ -64,7 +64,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDTO request) {
+    public ResponseEntity<ApiResponse<UserInfoDTO>> register(@Valid @RequestBody RegisterRequestDTO request) {
         try {
             UserInfoDTO user = authService.createUser(request);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -72,19 +72,19 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Registration failed for user: {}", request.getEmail(), e);
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>("Registration failed", 400, e.getMessage(), "/api/auth/register"));
+                    .body(new ApiResponse<>("Registration failed", 400, null, "/api/auth/register"));
         }
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<?> verifyAccount(@RequestParam("token") String token) {
+    public ResponseEntity<String> verifyAccount(@RequestParam("token") String token) {
         String result = verificationTokenService.verifyAccount(token);
         return ResponseEntity.ok(result);
     }
 
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authorization,
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authorization,
                                     @RequestBody String refreshToken) {
         try {
             // Lấy email từ access token
@@ -102,7 +102,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> refreshToken(@RequestBody Map<String, String> request) {
         try {
             String refreshToken = request.get("refreshToken");
             Map<String, Object> auth = authService.refreshToken(refreshToken);

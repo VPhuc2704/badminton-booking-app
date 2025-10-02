@@ -1,22 +1,21 @@
-# Badminton Chain Management API — Hướng dẫn cài đặt và chạy
 
-Tài liệu này mô tả cách cấu hình, chạy và thử nghiệm API backend của project.
+# Hướng dẫn nhanh — Backend Badminton Chain
 
-## Tổng quan
-Ứng dụng là một REST API Spring Boot (Java + Spring Data JPA) dùng PostgreSQL, RabbitMQ (tùy chọn), gửi email, và tích hợp OpenAI. Tài nguyên upload lưu trong thư mục `uploads/`.
+Tệp này hướng dẫn cách cài đặt, cấu hình môi trường và chạy API backend. Tôi viết gọn, thực tế để bạn làm theo nhanh.
 
-## Yêu cầu
-- Java 17+ (hoặc version được khai báo trong `pom.xml`).
+## Cần chuẩn bị
+- Java 17+
 - Maven
-- PostgreSQL (hoặc database tương thích)
-- (Tùy chọn) RabbitMQ nếu bạn dùng message queue
-- (Tùy chọn) Tài khoản email SMTP (Gmail/SendGrid...) nếu cần gửi email
-- (Tùy chọn) OpenAI API key nếu dùng tính năng AI
+- PostgreSQL (port mặc định 5432)
+- RabbitMQ để dùng message queue
+- Tài khoản SMTP để gửi email
+- OpenAI key nếu dùng tính năng AI
 
-## Biến môi trường (.env)
-Ứng dụng đọc cấu hình từ biến môi trường. Bạn nên tạo file `.env` trong thư mục gốc (không commit file này). Dưới đây là danh sách biến phổ biến và mô tả:
+## File cấu hình (.env)
+Tạo file `.env` ở thư mục gốc.
 
-# .env example (tạo file `.env` theo mẫu này và chỉnh lại giá trị)
+Mẫu `.env` :
+
 ```
 # Database
 DB_URL=jdbc:postgresql://localhost:5432/DB_MAIN
@@ -25,9 +24,8 @@ DB_PASSWORD=your_db_password
 
 # JWT
 JWT_SECRET=someVeryLongAndSecureSecretKey
-# (Nếu app đọc JWT từ application.properties thay thế jwt.secret)
 
-# Email (SMTP)
+# Email SMTP
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=your-email@gmail.com
@@ -36,7 +34,7 @@ MAIL_SMTP_AUTH=true
 MAIL_STARTTLS=true
 MAIL_SSL_TRUST=smtp.gmail.com
 
-# RabbitMQ (optional)
+# RabbitMQ
 RABBITMQ_URL=amqp://user:pass@localhost:5672
 
 # OpenAI
@@ -44,47 +42,38 @@ OPENAI_API_KEY=sk-...
 OPENAI_EMBEDDING_MODEL=gemini-2.0-flash
 OPENAI_CHAT_MODEL=gemini-2.5
 
-# External APIs
+# Ngoại vi khác
 WEATHER_API_KEY=...
-
-# App frontend (CORS / redirect)
 APP_FRONTEND_DOMAIN=http://localhost:5173
 ```
 
-Ghi chú:
-- Đổi tên biến nếu cần, dựa theo `src/main/resources/application-dev.properties` (ứng dụng dùng placeholders như `${DB_URL}`...)
-- Không commit file `.env` vào Git. Thêm `.env` vào `.gitignore`.
+## Tạo database và import dữ liệu mẫu
+Trong thư mục `Data/` có các file SQL mẫu. Ví dụ dùng psql:
 
-## Import dữ liệu mẫu và schema
-Trong thư mục `Data/` có nhiều file SQL (`data.sql`, `data2.sql`, ...). Dùng command-line psql hoặc GUI (pgAdmin) để tạo database và import dữ liệu:
-
-PowerShell / bash ví dụ:
+PowerShell:
 
 ```powershell
-# tạo db
+# tạo database (đổi user nếu cần)
 psql -U postgres -c "CREATE DATABASE DB_MAIN;"
-# import
+
+# import dữ liệu
 psql -U postgres -d DB_MAIN -f Data/data.sql
 ```
 
-Thay `postgres` bằng user DB của bạn và điều chỉnh đường dẫn file nếu cần.
+Bash/Linux:
 
-## Cấu hình .gitignore (khuyến nghị)
-Thêm vào `.gitignore` (nếu chưa có):
-```
-.env
-/uploads/
-*.jar
-target/
+```bash
+psql -U postgres -c "CREATE DATABASE DB_MAIN;"
+psql -U postgres -d DB_MAIN -f Data/data.sql
 ```
 
-## Build & Run
-Cách 1 — Chạy bằng Maven (thích hợp dev):
+## Chạy ứng dụng
 
-PowerShell (load `.env` rồi chạy):
+1) Tải biến từ `.env` vào shell (PowerShell hoặc bash)
+
+PowerShell:
 
 ```powershell
-# tải biến từ .env vào session PowerShell
 Get-Content .env | ForEach-Object {
   if ($_ -and ($_ -notmatch '^#')) {
     $parts = $_ -split "=",2
@@ -92,72 +81,46 @@ Get-Content .env | ForEach-Object {
   }
 }
 
-# build và chạy
+# chạy app (profile dev)
 mvn clean spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-Bash / Linux:
+Bash:
 
 ```bash
-# export biến môi trường từ .env
 set -a; source .env; set +a
 mvn clean spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-Cách 2 — Build JAR và chạy:
+2) Hoặc build JAR và chạy:
 
 ```powershell
-# build
 mvn clean package -DskipTests
-
-# chạy (PowerShell đã load .env như trên)
 java -jar target/badminton-chain-management-ai-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
-Ghi chú:
-- File properties `src/main/resources/application-dev.properties` đã sử dụng placeholders như `${DB_URL}` nên ứng dụng lấy giá trị từ environment.
-- Nếu muốn override trực tiếp, bạn có thể dùng JVM args: `-Dspring.datasource.url=...` hoặc `--DB_URL=...` khi chạy jar.
+Muốn override nhanh một biến khi chạy JAR, dùng `-D` hoặc `--`:
 
-## Truy cập API docs (Swagger)
-Sau khi chạy, mở trình duyệt:
+```powershell
+java -jar target/app.jar --DB_URL=jdbc:postgresql://... 
+```
 
-http://localhost:8080/swagger-ui.html
+## Kiểm tra API (Swagger)
+Mở: http://localhost:8080/swagger-ui.html
 
-Swagger sẽ liệt kê tất cả endpoint có thể gọi, mô tả request/response và cho phép thử trực tiếp trong trình duyệt.
+Ở đó bạn sẽ thấy danh sách endpoint, mẫu request/response và có thể thử gọi trực tiếp.
 
-## Xác thực (JWT)
-- Ứng dụng sử dụng JWT để bảo vệ các endpoint. Quy trình chung:
-  1. Gọi endpoint đăng nhập (xem Swagger để biết đường dẫn cụ thể) — trả về access token (Bearer).
-  2. Trong các request đến endpoint bảo vệ, thêm header `Authorization: Bearer <access_token>`.
+## Cơ bản về xác thực (JWT)
+- Đăng nhập (xem Swagger) để lấy access token.
+- Gửi token trong header `Authorization: Bearer <token>` cho các endpoint cần auth.
 
-Ví dụ curl (sau khi có token):
+Ví dụ curl:
 
 ```bash
 curl -H "Authorization: Bearer <ACCESS_TOKEN>" http://localhost:8080/api/your-protected-endpoint
 ```
 
-(Thay `api/your-protected-endpoint` bằng đường dẫn thực tế từ Swagger.)
-
-## Thông tin hữu ích khác
-- Uploads: thư mục `uploads/` dùng để lưu ảnh/court images. Đảm bảo ứng dụng có quyền ghi vào thư mục này.
-- Email: nếu dùng Gmail, kích hoạt "App Passwords" hoặc bật cấu hình SMTP phù hợp (Google có hạn chế bảo mật).
-- RabbitMQ: nếu sử dụng, cấu hình `RABBITMQ_URL` để kết nối.
-
-## Debug & Logs
-- Các log sẽ xuất ra console. Bạn có thể điều chỉnh mức log trong `application.properties` nếu cần.
-
-## Giải quyết sự cố thường gặp
-- Lỗi kết nối DB: kiểm tra `DB_URL`, user, password, kiểm tra server PostgreSQL đang chạy và port 5432.
-- Lỗi migration/hibernate: kiểm tra `spring.jpa.hibernate.ddl-auto` trong `application-dev.properties`.
-- Ứng dụng không khởi động do thiếu biến: kiểm tra `.env` hoặc truyền biến qua CLI.
-
-## Tiếp theo (gợi ý nâng cao)
-- Thêm file `.env.example` chứa biến mẫu (không chứa secret) để đồng đội dễ cấu hình.
-- Thiết lập CI/CD: inject biến môi trường trong pipeline thay vì commit `.env`.
-
----
-Nếu bạn muốn, tôi có thể tiếp:
-- Tạo file `.env.example` tự động.
-- Thêm `.env` vào `.gitignore` hoặc cập nhật file nếu bạn muốn tôi chỉnh repo ngay.
-- Liệt kê các endpoint quan trọng (auth, user, booking) bằng cách đọc mã nguồn nếu bạn muốn bản README chi tiết endpoint.  
-
+## Một số ghi chú nhanh
+- Thư mục `uploads/` lưu ảnh — đảm bảo ứng dụng có quyền ghi.
+- Nếu dùng Gmail để gửi mail, tốt nhất tạo App Password chứ không dùng password tài khoản chính.
+- Kiểm tra `application-dev.properties` nếu cần thay đổi chính sách migration (`spring.jpa.hibernate.ddl-auto`).

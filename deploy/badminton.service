@@ -1,0 +1,14 @@
+[Unit]
+Description=Badminton Backend
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/opt/badminton
+EnvironmentFile=/opt/badminton/.env
+ExecStart=/usr/bin/java -jar /opt/badminton/badminton-chain-management-ai-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

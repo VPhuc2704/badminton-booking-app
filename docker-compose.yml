@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_DB: DB_MAIN
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespw
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./Data:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    image: badminton-backend:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/DB_MAIN
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgrespw
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

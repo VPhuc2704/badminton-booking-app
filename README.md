@@ -124,3 +124,92 @@ curl -H "Authorization: Bearer <ACCESS_TOKEN>" http://localhost:8080/api/your-pr
 - Thư mục `uploads/` lưu ảnh — đảm bảo ứng dụng có quyền ghi.
 - Nếu dùng Gmail để gửi mail, tốt nhất tạo App Password chứ không dùng password tài khoản chính.
 - Kiểm tra `application-dev.properties` nếu cần thay đổi chính sách migration (`spring.jpa.hibernate.ddl-auto`).
+
+## Triển khai nhanh lên server (IP: 14.225.198.75)
+
+Dưới đây là hai cách đơn giản để deploy ứng dụng để nhà tuyển dụng truy cập Swagger tại `http://14.225.198.75/swagger-ui.html` mà không cần họ cài đặt.
+
+Chuẩn bị trên server:
+- Ubuntu 20.04+ (hoặc tương đương)
+- Docker & docker-compose (nếu deploy bằng Docker)
+- Nginx nếu muốn reverse-proxy từ port 80 sang app
+- Mở port 80 (HTTP) trên firewall / cloud security group
+
+1) Deploy bằng Docker (khuyến nghị nhanh)
+
+Trên máy local build image rồi push lên server, hoặc build trực tiếp trên server.
+
+Ví dụ build + chạy trên server (SSH vào 14.225.198.75):
+
+```bash
+# copy source lên server (ví dụ dùng scp hoặc git clone trên server)
+git clone <repo-url> app && cd app/backend/badminton-chain-management-ai
+
+# tạo .env trên server (theo .env.example)
+cp .env.example .env
+# chỉnh .env cho phù hợp (DB nếu dùng local/managed DB)
+
+# build image
+mvn clean package -DskipTests
+docker build -t badminton-backend:latest .
+
+# chạy docker-compose
+docker-compose up -d --build
+```
+
+Sau khi container chạy, ứng dụng lắng nghe trên port 8080 và `docker-compose.yml` map tới port 8080 trên host. Truy cập:
+
+http://14.225.198.75:8080/swagger-ui.html
+
+Để ẩn port 8080 và cho truy cập qua HTTP trên port 80, cấu hình Nginx trên server để reverse-proxy (xem phần Nginx bên dưới).
+
+2) Deploy bằng JAR + systemd + Nginx
+
+Trên server:
+
+```bash
+# copy jar và .env lên /opt/badminton
+sudo mkdir -p /opt/badminton
+sudo chown $USER /opt/badminton
+cp target/badminton-chain-management-ai-0.0.1-SNAPSHOT.jar /opt/badminton/
+cp .env /opt/badminton/
+
+# tạo systemd service (ví dụ /etc/systemd/system/badminton.service)
+# (nội dung mẫu có trong file deploy/badminton.service trong repo)
+sudo cp deploy/badminton.service /etc/systemd/system/badminton.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now badminton.service
+```
+
+Sau đó ứng dụng sẽ chạy ở `http://127.0.0.1:8080`. Cài Nginx để proxy ra port 80.
+
+Nginx (ví dụ):
+
+```nginx
+server {
+  listen 80;
+  server_name 14.225.198.75;
+
+  location / {
+    proxy_pass http://127.0.0.1:8080/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+```
+
+Enable Nginx and reload:
+
+```bash
+sudo systemctl enable --now nginx
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Bây giờ mở: http://14.225.198.75/swagger-ui.html
+
+Lưu ý bảo mật:
+- Không để `.env` chứa secrets public; dùng biến môi trường trên server hoặc secrets manager.
+- Nếu public cho nhà tuyển dụng, cân nhắc bật HTTPS (Let's Encrypt) và giới hạn IP nếu cần.
+

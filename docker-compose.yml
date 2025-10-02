@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: postgrespw
     volumes:
       - ./Data:/docker-entrypoint-initdb.d
-    entrypoint: ["sh","-c","until pg_isready -h db -p 5432; do sleep 1; done; psql -h db -U postgres -d DB_MAIN -c \"CREATE EXTENSION IF NOT EXISTS pgcrypto;\"; if [ \"$(psql -h db -U postgres -d DB_MAIN -tAc \"SELECT 1 FROM information_schema.tables WHERE table_name='document_chunks';\")\" != '1' ]; then echo 'Importing Data/data.sql...' ; psql -h db -U postgres -d DB_MAIN -f /docker-entrypoint-initdb.d/data.sql ; else echo 'document_chunks already exists, skipping import' ; fi"]
+    entrypoint: ["sh","-c","/docker-entrypoint-initdb.d/db-init.sh"]
 
   app:
     build: .

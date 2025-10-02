@@ -2,25 +2,26 @@
 # Hướng dẫn nhanh — Backend Badminton Chain
 Link API (Swagger): http://14.225.198.75:8080/swagger-ui/index.html
 
-Tệp này hướng dẫn cách cài đặt, cấu hình môi trường và chạy API backend. Tôi viết gọn, thực tế để bạn làm theo nhanh.
+Tệp này hướng dẫn cách cài đặt, cấu hình môi trường và chạy API backend.
 
 ## Những chức năng đã làm
-- Xác thực & phân quyền: đăng ký, đăng nhập, cấp JWT, role CUSTOMER / ADMIN.
-- Quản lý người dùng & khách hàng (users, customers).
-- Quản lý sân (courts): tạo/sửa, trạng thái, giá, ảnh.
-- Đặt sân (bookings) với mã đặt, trạng thái, thông tin thanh toán.
-- Quản lý dịch vụ & giao dịch (services, transactions).
-- Upload ảnh và lưu trong `uploads/`.
-- Tìm kiếm ngữ nghĩa: lưu embeddings vào bảng `document_chunks` và index với pgvector.
-- Dockerize: Dockerfile cho app, docker-compose (kèm db-init) để chạy Postgres có pgvector và import `Data/data.sql` khi cần.
+- Xác thực & phân quyền: đăng ký, đăng nhập, cấp JWT, phân quyền theo vai trò.
+- Quản lý người dùng & khách hàng.
+- Quản lý sân (courts): tạo/cập nhật sân, quản lý trạng thái, giá theo giờ, lưu ảnh.
+- Hệ thống đặt sân (bookings): sinh mã đặt duy nhất, quản lý trạng thái booking, thông tin thanh toán.
+- Quản lý dịch vụ & giao dịch: quản lý các dịch vụ phụ trợ và ghi nhận giao dịch liên quan.
+- Chat AI (RAG): trả lời theo ngữ cảnh sử dụng embeddings với model của Google Gemini.
+- Xử lý nhắc lịch & thông báo: sử dụng RabbitMQ để quản lý task và event-driven.
+- Upload ảnh: lưu ảnh upload vào thư mục uploads/.
+- Tìm kiếm ngữ nghĩa: sử dụng pgvector để index và tìm kiếm nhanh.
 
 ## Cần chuẩn bị
 - Java 17+
 - Maven
-- PostgreSQL (port mặc định 5432)
-- RabbitMQ để dùng message queue
+- PostgreSQL
+- RabbitMQ
 - Tài khoản SMTP để gửi email
-- OpenAI key nếu dùng tính năng AI
+- Google Gemini model AI
 
 ## File cấu hình (.env)
 Tạo file `.env` ở thư mục gốc.

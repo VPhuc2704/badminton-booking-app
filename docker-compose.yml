@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   db:
-    image: postgres:14
+    image: ankane/pgvector:postgres16
     restart: always
     environment:
       POSTGRES_DB: DB_MAIN
@@ -12,6 +12,17 @@ services:
       - ./Data:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
+
+  db-init:
+    image: ankane/pgvector:postgres16
+    depends_on:
+      - db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespw
+    volumes:
+      - ./Data:/docker-entrypoint-initdb.d
+  entrypoint: ["sh","-c","until pg_isready -h db -p 5432; do sleep 1; done; \n# ensure pgcrypto for gen_random_uuid and any other extensions\npsql -h db -U postgres -d DB_MAIN -c \"CREATE EXTENSION IF NOT EXISTS pgcrypto;\"; \nif [ \"$(psql -h db -U postgres -d DB_MAIN -tAc \"SELECT 1 FROM information_schema.tables WHERE table_name='document_chunks';\")\" != '1' ]; then \n  echo 'Importing Data/data.sql...' ; \n  psql -h db -U postgres -d DB_MAIN -f /docker-entrypoint-initdb.d/data.sql ; \nelse \n  echo 'document_chunks already exists, skipping import' ; \nfi"]
 
   app:
     build: .

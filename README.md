@@ -1,7 +1,18 @@
 
 # Hướng dẫn nhanh — Backend Badminton Chain
+Link API (Swagger): http://14.225.198.75:8080/swagger-ui/index.html
 
 Tệp này hướng dẫn cách cài đặt, cấu hình môi trường và chạy API backend. Tôi viết gọn, thực tế để bạn làm theo nhanh.
+
+## Những chức năng đã làm
+- Xác thực & phân quyền: đăng ký, đăng nhập, cấp JWT, role CUSTOMER / ADMIN.
+- Quản lý người dùng & khách hàng (users, customers).
+- Quản lý sân (courts): tạo/sửa, trạng thái, giá, ảnh.
+- Đặt sân (bookings) với mã đặt, trạng thái, thông tin thanh toán.
+- Quản lý dịch vụ & giao dịch (services, transactions).
+- Upload ảnh và lưu trong `uploads/`.
+- Tìm kiếm ngữ nghĩa: lưu embeddings vào bảng `document_chunks` và index với pgvector.
+- Dockerize: Dockerfile cho app, docker-compose (kèm db-init) để chạy Postgres có pgvector và import `Data/data.sql` khi cần.
 
 ## Cần chuẩn bị
 - Java 17+
@@ -44,7 +55,6 @@ OPENAI_CHAT_MODEL=gemini-2.5
 
 # Ngoại vi khác
 WEATHER_API_KEY=...
-APP_FRONTEND_DOMAIN=http://localhost:5173
 ```
 
 ## Tạo database và import dữ liệu mẫu
@@ -57,13 +67,6 @@ PowerShell:
 psql -U postgres -c "CREATE DATABASE DB_MAIN;"
 
 # import dữ liệu
-psql -U postgres -d DB_MAIN -f Data/data.sql
-```
-
-Bash/Linux:
-
-```bash
-psql -U postgres -c "CREATE DATABASE DB_MAIN;"
 psql -U postgres -d DB_MAIN -f Data/data.sql
 ```
 
@@ -92,23 +95,10 @@ set -a; source .env; set +a
 mvn clean spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-2) Hoặc build JAR và chạy:
-
-```powershell
-mvn clean package -DskipTests
-java -jar target/badminton-chain-management-ai-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
-```
-
-Muốn override nhanh một biến khi chạy JAR, dùng `-D` hoặc `--`:
-
-```powershell
-java -jar target/app.jar --DB_URL=jdbc:postgresql://... 
-```
-
 ## Kiểm tra API (Swagger)
-Mở: http://localhost:8080/swagger-ui.html
+Mở: http://14.225.198.75:8080/swagger-ui/index.html
 
-Ở đó bạn sẽ thấy danh sách endpoint, mẫu request/response và có thể thử gọi trực tiếp.
+Ở đây sẽ thấy danh sách endpoint, mẫu request/response và có thể thử gọi trực tiếp.
 
 ## Cơ bản về xác thực (JWT)
 - Đăng nhập (xem Swagger) để lấy access token.

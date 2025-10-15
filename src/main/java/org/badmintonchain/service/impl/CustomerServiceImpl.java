@@ -199,6 +199,10 @@ public class CustomerServiceImpl implements CustomerService {
 
         UsersEntity savedUser = userRepository.save(user);
 
+        CustomerEntity customer = new CustomerEntity();
+        customer.setUsers(user);
+        customer.setNumberPhone(request.getNumberPhone());
+        customerRepository.save(customer);
 
         return toDTO(savedUser);
     }

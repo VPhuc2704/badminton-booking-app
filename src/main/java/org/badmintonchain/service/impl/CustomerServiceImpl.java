@@ -194,7 +194,7 @@ public class CustomerServiceImpl implements CustomerService {
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(defaultPassword));
-        user.setRoleName(request.getRole());
+        user.setRoleName(request.getRole() != null ? request.getRole() : RoleName.CUSTOMER);
         user.setActive(true);
 
         UsersEntity savedUser = userRepository.save(user);

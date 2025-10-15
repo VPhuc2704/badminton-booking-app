@@ -1,14 +1,17 @@
 package org.badmintonchain.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.CustomerUserDTO;
 import org.badmintonchain.model.dto.PageResponse;
+import org.badmintonchain.model.dto.requests.ChangePasswordRequest;
+import org.badmintonchain.model.dto.requests.CreateUserRequest;
+import org.badmintonchain.model.dto.response.UserInfoDTO;
 import org.badmintonchain.model.enums.RoleName;
 import org.badmintonchain.security.CustomUserDetails;
 import org.badmintonchain.service.CustomerService;
 import org.badmintonchain.utils.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -125,4 +128,56 @@ public class CustomerController {
                 request.getRequestURI()
         ));
     }
+
+    @PatchMapping("/change-password")
+    public ResponseEntity<ApiResponse<String>> changePassword(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                                              @RequestBody ChangePasswordRequest changePasswordRequest,
+                                                              HttpServletRequest request){
+            try {
+                customerService.changePassword(currentUser.getUser().getId(), changePasswordRequest);
+                return  ResponseEntity.ok(new ApiResponse<>(
+                        "Cập nhật password thành công",
+                        HttpStatus.CREATED.value(),
+                        null,
+                        request.getRequestURI()
+                ));
+            } catch (UsersException ex) {
+                return ResponseEntity.badRequest().body(
+                        new ApiResponse<>(
+                                ex.getMessage(),
+                                HttpStatus.BAD_REQUEST.value(),
+                                null,
+                                request.getRequestURI()
+                        )
+                );
+            }
+    }
+
+    @PostMapping("/admin/users")
+    public ResponseEntity<ApiResponse<CustomerUserDTO>> createUser(@AuthenticationPrincipal  CustomUserDetails currentUser,
+                                                                   @RequestBody CreateUserRequest request,
+                                                                   HttpServletRequest httpRequest) {
+        if (currentUser.getUser().getRoleName() != RoleName.ADMIN) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>("Access denied", 403, null, httpRequest.getRequestURI()));
+        }
+        try {
+            CustomerUserDTO user = customerService.createUser(request);
+            return ResponseEntity.ok(new ApiResponse<>(
+                    "Tạo tài khoản thành công",
+                    HttpStatus.CREATED.value(),
+                    user,
+                    httpRequest.getRequestURI()
+            ));
+        } catch (UsersException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(
+                    ex.getMessage(),
+                    HttpStatus.BAD_REQUEST.value(),
+                    null,
+                    httpRequest.getRequestURI()
+            ));
+        }
+    }
+
+
 }

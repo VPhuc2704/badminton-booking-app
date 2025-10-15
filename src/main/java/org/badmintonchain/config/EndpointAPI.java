@@ -19,7 +19,8 @@ public class EndpointAPI {
 
     public  static final String[] PRIVATE_ENDPOINTS = {
             "/api/bookings/**",
-            "/api/users/*"
+            "/api/users/*",
+            "/api/change-password/*",
 
     };
 

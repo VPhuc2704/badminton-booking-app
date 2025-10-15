@@ -3,6 +3,9 @@ package org.badmintonchain.service.impl;
 import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.CustomerUserDTO;
 import org.badmintonchain.model.dto.PageResponse;
+import org.badmintonchain.model.dto.requests.ChangePasswordRequest;
+import org.badmintonchain.model.dto.requests.CreateUserRequest;
+import org.badmintonchain.model.dto.response.UserInfoDTO;
 import org.badmintonchain.model.entity.CustomerEntity;
 import org.badmintonchain.model.entity.UsersEntity;
 import org.badmintonchain.model.enums.RoleName;
@@ -10,12 +13,13 @@ import org.badmintonchain.repository.BookingRepository;
 import org.badmintonchain.repository.CustomerRepository;
 import org.badmintonchain.repository.UserRepository;
 import org.badmintonchain.service.CustomerService;
+import org.hibernate.validator.internal.constraintvalidators.bv.time.futureorpresent.FutureOrPresentValidatorForLocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +33,9 @@ public class CustomerServiceImpl implements CustomerService {
     private  CustomerRepository customerRepository;
     @Autowired
     private BookingRepository  bookingRepository;
+    private FutureOrPresentValidatorForLocalDate futureOrPresentValidatorForLocalDate;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public PageResponse<CustomerUserDTO> getAllUsers(int page, int size, String keyword, Boolean isActive) {
@@ -159,6 +166,41 @@ public class CustomerServiceImpl implements CustomerService {
 
         // Admin / Staff thì hard delete
         userRepository.delete(user);
+    }
+
+    @Override
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        UsersEntity users =  userRepository.findById(userId)
+                .orElseThrow(() -> new UsersException("User not found"));
+
+        if(!passwordEncoder.matches(request.getOldPassword(), users.getPasswordHash())){
+            throw new UsersException("Mật khẩu hiện tại không đúng");
+        }
+
+        users.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(users);
+    }
+
+    @Override
+    public CustomerUserDTO createUser(CreateUserRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new UsersException("Email đã tồn tại");
+        }
+
+        // 👉 Đặt mật khẩu mặc định
+        String defaultPassword = "123456";
+
+        UsersEntity user = new UsersEntity();
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setPasswordHash(passwordEncoder.encode(defaultPassword));
+        user.setRoleName(request.getRole());
+        user.setActive(true);
+
+        UsersEntity savedUser = userRepository.save(user);
+
+
+        return toDTO(savedUser);
     }
 
 

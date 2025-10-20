@@ -186,4 +186,12 @@ public class AuthServiceImpl implements AuthService {
         return response;
     }
 
+    @Override
+    public UsersEntity getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        return userRepository.findById(userDetails.getUser().getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
 }

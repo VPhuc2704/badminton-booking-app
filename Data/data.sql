@@ -1,5 +1,5 @@
 -- 0. ENUM types
-CREATE TYPE user_role AS ENUM ('CUSTOMER', 'ADMIN');
+CREATE TYPE user_role AS ENUM ('CUSTOMER', 'ADMIN', 'STAFF');
 CREATE TYPE court_status AS ENUM ('AVAILABLE', 'MAINTENANCE', 'UNAVAILABLE');
 CREATE TYPE booking_status AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED');
 CREATE TYPE court_type AS ENUM ('INDOOR', 'OUTDOOR');
@@ -40,6 +40,8 @@ CREATE TABLE courts (
                         create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE courts ADD COLUMN branch_id INT REFERENCES branches(id) ON DELETE SET NULL;
 
 -- 4. Bookings
 CREATE TABLE bookings (
@@ -96,6 +98,21 @@ CREATE TABLE document_chunks (
 );
 
 CREATE INDEX ON document_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
+
+
+
+CREATE TABLE branches (
+                          id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                          branch_name VARCHAR(100) NOT NULL,
+                          address TEXT,
+                          phone VARCHAR(20),
+                          manager_id INT UNIQUE,  -- user_id của STAFF quản lý chi nhánh này
+                          is_active BOOLEAN DEFAULT TRUE,
+                          create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL
+);
 
 
 INSERT INTO users (email, password_hash, full_name, role_name, is_active, create_at) VALUES

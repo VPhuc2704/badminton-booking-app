@@ -17,16 +17,40 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
 
+//    @Query(value = """
+//        SELECT * FROM bookings b
+//        WHERE (:year IS NULL OR EXTRACT(ISOYEAR FROM b.booking_date) = :year)
+//          AND (:month IS NULL OR EXTRACT(MONTH FROM b.booking_date) = :month)
+//          AND (:week IS NULL OR EXTRACT(WEEK FROM b.booking_date) = :week)
+//          AND (b.booking_date = COALESCE(:day, b.booking_date))
+//        """,
+//            nativeQuery = true
+//    )
     @Query(value = """
-        SELECT * FROM bookings b
-        WHERE (:year IS NULL OR EXTRACT(ISOYEAR FROM b.booking_date) = :year)
-          AND (:month IS NULL OR EXTRACT(MONTH FROM b.booking_date) = :month)
-          AND (:week IS NULL OR EXTRACT(WEEK FROM b.booking_date) = :week)
-          AND (b.booking_date = COALESCE(:day, b.booking_date))
-        """,
+    SELECT b.* FROM bookings b
+    JOIN courts c ON b.court_id = c.id
+    JOIN branches br ON c.branch_id = br.id
+    WHERE (:branchId IS NULL OR br.id = :branchId)
+        AND (:year IS NULL OR EXTRACT(ISOYEAR FROM b.booking_date) = :year)
+        AND (:month IS NULL OR EXTRACT(MONTH FROM b.booking_date) = :month)
+        AND (:week IS NULL OR EXTRACT(WEEK FROM b.booking_date) = :week)
+        AND (b.booking_date = COALESCE(:day, b.booking_date))
+    ORDER BY b.booking_date DESC
+    """,
+            countQuery = """
+    SELECT COUNT(*) FROM bookings b
+    JOIN courts c ON b.court_id = c.id
+    JOIN branches br ON c.branch_id = br.id
+    WHERE (:branchId IS NULL OR br.id = :branchId)
+        AND (:year IS NULL OR EXTRACT(ISOYEAR FROM b.booking_date) = :year)
+        AND (:month IS NULL OR EXTRACT(MONTH FROM b.booking_date) = :month)
+        AND (:week IS NULL OR EXTRACT(WEEK FROM b.booking_date) = :week)
+        AND (b.booking_date = COALESCE(:day, b.booking_date))
+    """,
             nativeQuery = true
     )
-    Page<BookingsEntity> findByYearMonthDay(@Param("year") Integer year,
+    Page<BookingsEntity> findByYearMonthDay(@Param("branchId") Long branchId,
+                                            @Param("year") Integer year,
                                             @Param("month") Integer month,
                                             @Param("week") Integer week,
                                             @Param("day") LocalDate day,

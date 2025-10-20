@@ -52,7 +52,8 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests((authorize) -> {
-                    authorize.requestMatchers(EndpointAPI.MANAGEMENT_API_ENDPOINTS).hasRole("ADMIN");
+                    authorize.requestMatchers(EndpointAPI.MANAGEMENT_API_ENDPOINTS).hasAnyRole("ADMIN", "STAFF");
+                    authorize.requestMatchers(EndpointAPI.ADMIN_API_ENDPOINTS).hasRole("ADMIN");
                     authorize.requestMatchers(EndpointAPI.PUBLIC_API_ENDPOINTS).permitAll();
                     authorize.requestMatchers(EndpointAPI.PRIVATE_ENDPOINTS).authenticated();
                     authorize.anyRequest().authenticated();

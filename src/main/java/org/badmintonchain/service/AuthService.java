@@ -12,4 +12,5 @@ public interface AuthService {
     UserInfoDTO createUser(RegisterRequestDTO request);
     void logout(String email, String refreshToken);
     Map<String, Object> refreshToken(String refreshTokenValue);
+    UsersEntity getCurrentUser();
 }

@@ -62,4 +62,11 @@ public class CourtEntity extends BaseEntity {
         @Column(name = "status", nullable = false)
         private CourtStatus status =  CourtStatus.AVAILABLE;
 
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "branch_id")
+        private BranchEntity branch;
+
+        @OneToMany(mappedBy = "court", fetch = FetchType.LAZY)
+        private List<BookingsEntity> bookings;
+
 }

@@ -6,13 +6,20 @@ import org.badmintonchain.model.dto.AvailabilitySlotDTO;
 import org.badmintonchain.model.dto.CourtDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.entity.BookingsEntity;
+import org.badmintonchain.model.entity.BranchEntity;
 import org.badmintonchain.model.entity.CourtEntity;
+import org.badmintonchain.model.entity.UsersEntity;
 import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.enums.CourtStatus;
+import org.badmintonchain.model.enums.RoleName;
 import org.badmintonchain.model.mapper.CourtMapper;
 import org.badmintonchain.repository.BookingRepository;
+import org.badmintonchain.repository.BranchRepository;
 import org.badmintonchain.repository.CourtRepository;
+import org.badmintonchain.security.CustomUserDetails;
+import org.badmintonchain.service.AuthService;
 import org.badmintonchain.service.CourtService;
+import org.badmintonchain.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,12 +43,25 @@ public class CourtServiceImpl implements CourtService {
     private CourtRepository courtRepository;
     @Autowired
     private BookingRepository bookingRepository;
-
+    @Autowired
+    private AuthService  authService;
+    @Autowired
+    private BranchRepository branchRepository;
     // Admin: lấy tất cả sân
     @Override
     public PageResponse<CourtDTO> getAllCourts(int page, int size) {
+        UsersEntity currentUser = authService.getCurrentUser();
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
-        Page<CourtEntity> courts = courtRepository.findAll(pageable);
+//        Page<CourtEntity> courts = courtRepository.findAll(pageable);
+        Page<CourtEntity> courts;
+        if (currentUser.getRoleName() == RoleName.ADMIN) {
+            courts = courtRepository.findAll(pageable);
+        } else if (currentUser.getRoleName() == RoleName.STAFF) {
+            courts = courtRepository.findByBranchId(currentUser.getBranch().getId(), pageable);
+        } else {
+            throw new CourtException("Bạn không có quyền truy cập");
+        }
 
         Page<CourtDTO> dtoPage = courts.map(CourtMapper::toCourtDTO);
 
@@ -77,12 +97,24 @@ public class CourtServiceImpl implements CourtService {
 
     @Override
     public CourtDTO getCourtById(Long id) {
+        UsersEntity currentUser = authService.getCurrentUser();
         CourtEntity court = courtRepository.findById(id)
                 .orElseThrow(()-> new CourtException("Court not found with id " + id));
+
+        if(currentUser.getRoleName() == RoleName.STAFF) {
+            Long staffBranchId = currentUser.getBranch().getId();
+            Long courtBranchId = court.getBranch().getId();
+
+            if (!staffBranchId.equals(courtBranchId)) {
+                throw new CourtException("Bạn không có quyền truy cập sân của chi nhánh khác");
+            }
+        }
+
         CourtDTO courtDTO = CourtMapper.toCourtDTO(court);
         return courtDTO;
     }
 
+    // user
     @Override
     public CourtDTO getCourtIfAvailable(Long id) {
         CourtEntity court = courtRepository.findById(id)
@@ -96,15 +128,67 @@ public class CourtServiceImpl implements CourtService {
 
     @Override
     public CourtDTO createCourt(CourtDTO court) {
+
+        UsersEntity currentUser = authService.getCurrentUser();
         CourtEntity courtEntity = CourtMapper.toCourtEntity(court);
+
+        if (currentUser.getRoleName() == RoleName.ADMIN) {
+            if(court.getBranchId() == null) {
+                throw new CourtException("Vui lòng chọn chi nhánh khi tạo sân");
+            }
+
+            BranchEntity branch = branchRepository.findById(court.getBranchId())
+                    .orElseThrow(() -> new CourtException("Không tìm thấy chi nhánh"));
+            courtEntity.setBranch(branch);
+
+        } else if (currentUser.getRoleName() == RoleName.STAFF) {
+
+            BranchEntity branch = currentUser.getBranch();
+
+            // Staff: chỉ được tạo sân trong chi nhánh của mình
+            if (currentUser.getBranch() == null) {
+                throw new CourtException("Tài khoản staff chưa được gán chi nhánh.");
+            }
+
+            if (Boolean.FALSE.equals(branch.getIsActive())) {
+                throw new CourtException("Chi nhánh của bạn đã ngừng hoạt động, không thể tạo sân.");
+            }
+
+
+            courtEntity.setBranch(currentUser.getBranch());
+        } else {
+            throw new CourtException("Bạn không có quyền tạo sân.");
+        }
+
         CourtEntity saved = courtRepository.save(courtEntity);
         return CourtMapper.toCourtDTO(saved);
     }
 
     @Override
     public CourtDTO updateCourt(Long id, CourtDTO courtDTO) {
+
+        UsersEntity currentUser = authService.getCurrentUser();
+
         CourtEntity court = courtRepository.findById(id)
-                .orElseThrow(() -> new CourtException("Court not found"));
+                .orElseThrow(() -> new CourtException("Không tìm thấy sân với ID: \" + id"));
+
+        if (currentUser.getRoleName() == RoleName.STAFF) {
+            BranchEntity staffBranch = currentUser.getBranch();
+
+            if (staffBranch == null) {
+                throw new CourtException("Tài khoản staff chưa được gán chi nhánh.");
+            }
+
+            // Chỉ được phép cập nhật sân của chi nhánh mình quản lý
+            if (!staffBranch.getId().equals(court.getBranch().getId())) {
+                throw new CourtException("Bạn không có quyền chỉnh sửa sân của chi nhánh khác.");
+            }
+
+            // Chỉ cập nhật nếu chi nhánh của staff đang hoạt động
+            if (Boolean.FALSE.equals(staffBranch.getIsActive())) {
+                throw new CourtException("Chi nhánh của bạn đã ngừng hoạt động, không thể cập nhật sân.");
+            }
+        }
 
         if (courtDTO.getCourtName() != null) {
             court.setCourtName(courtDTO.getCourtName());
@@ -129,7 +213,7 @@ public class CourtServiceImpl implements CourtService {
         }
 
         if (!court.getIsActive() && court.getStatus() == CourtStatus.AVAILABLE) {
-            throw new CourtException("Inactive court cannot be AVAILABLE");
+            throw new CourtException("Sân không hoạt động không thể đặt trạng thái là AVAILABLE.");
         }
 
         CourtEntity updated = courtRepository.save(court);
@@ -138,8 +222,29 @@ public class CourtServiceImpl implements CourtService {
 
     @Override
     public void deleteCourtById(Long id) {
+        UsersEntity currentUser = authService.getCurrentUser();
         CourtEntity court = courtRepository.findById(id)
-                .orElseThrow(() -> new CourtException("Court not found"));
+                .orElseThrow(() -> new CourtException("Không tìm thấy sân với ID: " + id));
+
+        if (currentUser.getRoleName() == RoleName.STAFF) {
+            BranchEntity staffBranch = currentUser.getBranch();
+
+            if (staffBranch == null) {
+                throw new CourtException("Tài khoản staff chưa được gán chi nhánh.");
+            }
+
+            // Không cho xoá sân chi nhánh khác
+            if (!staffBranch.getId().equals(court.getBranch().getId())) {
+                throw new CourtException("Bạn không có quyền xoá sân của chi nhánh khác.");
+            }
+
+            // Không cho xoá nếu chi nhánh ngừng hoạt động
+            if (Boolean.FALSE.equals(staffBranch.getIsActive())) {
+                throw new CourtException("Chi nhánh của bạn đã ngừng hoạt động, không thể xoá sân.");
+            }
+        }
+
+        // Admin thì không giới hạn
         courtRepository.delete(court);
     }
 

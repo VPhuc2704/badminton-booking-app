@@ -72,11 +72,5 @@ public class BookingsEntity extends BaseEntity{
 
     @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
     private TransactionEntity transaction;
-//
-//    @Column(name = "payment_status", nullable = false)
-//    private String paymentStatus;
-//
-//    @Column(name = "notes", columnDefinition = "TEXT")
-//    private String notes;
 
 }

@@ -21,4 +21,9 @@ public class CourtDTO {
     private List<String> images = new ArrayList<>();
     private Boolean isActive;
     private CourtStatus status;
+
+    private Long branchId;
+    private String branchName;
+    private String branchAddress;
+    private String branchPhone;
 }

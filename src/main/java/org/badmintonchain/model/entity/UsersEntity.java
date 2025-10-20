@@ -1,14 +1,18 @@
 package org.badmintonchain.model.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.badmintonchain.model.enums.RoleName;
+
+import java.util.Map;
 
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UsersEntity extends BaseEntity{
     /*
         id SERIAL PRIMARY KEY,
@@ -47,6 +51,9 @@ public class UsersEntity extends BaseEntity{
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private VerificationToken verificationToken;
+
+    @OneToOne(mappedBy = "manager", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private BranchEntity  branch;
 
 
 }

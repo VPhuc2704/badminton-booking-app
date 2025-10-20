@@ -15,6 +15,10 @@ public class CourtMapper {
         dto.setImages(courtEntity.getImages());
         dto.setIsActive(courtEntity.getIsActive());
         dto.setStatus(courtEntity.getStatus());
+        dto.setBranchId(courtEntity.getBranch().getId());
+        dto.setBranchAddress(courtEntity.getBranch().getAddress());
+        dto.setBranchName(courtEntity.getBranch().getBranchName());
+        dto.setBranchPhone(courtEntity.getBranch().getPhone());
         return dto;
     }
 

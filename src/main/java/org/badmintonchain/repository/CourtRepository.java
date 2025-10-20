@@ -14,4 +14,5 @@ import java.util.List;
 @Repository
 public interface CourtRepository extends JpaRepository<CourtEntity, Long> {
     Page<CourtEntity> findByIsActiveTrueAndStatus(CourtStatus status, Pageable pageable);
+    Page<CourtEntity> findByBranchId(Long branchId, Pageable pageable);
 }

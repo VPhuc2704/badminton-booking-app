@@ -12,6 +12,7 @@ import org.badmintonchain.model.entity.*;
 import org.badmintonchain.model.enums.*;
 import org.badmintonchain.model.mapper.BookingMapper;
 import org.badmintonchain.repository.*;
+import org.badmintonchain.service.AuthService;
 import org.badmintonchain.service.BookingService;
 import org.badmintonchain.service.EmailService;
 import org.badmintonchain.service.event.BookingCreatedEvent;
@@ -59,6 +60,8 @@ public class BookingServiceImpl implements BookingService {
     private EmailService emailService;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AuthService authService;
 
 
     @Override
@@ -201,9 +204,20 @@ public class BookingServiceImpl implements BookingService {
     // --- ADMIN ---
     @Override
     public PageResponse<BookingDTO> getAllBookings(int page, int size, Integer year, Integer month,Integer week ,LocalDate day) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by( "booking_date").descending());
+        UsersEntity currentUser = authService.getCurrentUser();
 
-        Page<BookingsEntity> bookings = bookingRepository.findByYearMonthDay(year, month, week, day, pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by( "booking_date").descending());
+        Long branchId = null;
+
+        if (currentUser.getRoleName() == RoleName.STAFF) {
+            if (currentUser.getBranch() == null) {
+                throw new UsersException("Bạn khong có quyền");
+            }
+            branchId = currentUser.getBranch().getId();
+        }
+
+
+        Page<BookingsEntity> bookings = bookingRepository.findByYearMonthDay(branchId, year, month, week, day, pageable);
 
         List<BookingDTO> bookingDTOs = bookings.getContent()
                 .stream()
@@ -224,8 +238,9 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingDTO updateBookingStatus(Long bookingId, BookingStatus newStatus ) {
+        UsersEntity currentUser = authService.getCurrentUser();
         BookingsEntity booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BookingException("Booking not found"));
+                .orElseThrow(() -> new BookingException("Không tìm thấy booking"));
 
         // Nếu trạng thái không thay đổi thì bỏ qua
         if (booking.getStatus() == newStatus) {
@@ -234,7 +249,22 @@ public class BookingServiceImpl implements BookingService {
 
         // Kiem tra truoc khi hủy
         if (booking.getPaymentStatus() == PaymentStatus.PAID && newStatus == BookingStatus.CANCELLED) {
-            throw new BookingException("Cannot cancel a paid booking");
+            throw new BookingException("Không thể hủy booking đã thanh toán");
+        }
+
+        if (currentUser.getRoleName().equals(RoleName.STAFF)) {
+            // Kiểm tra chi nhánh
+            Long staffBranchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            Long bookingBranchId = booking.getCourt().getBranch() != null ? booking.getCourt().getBranch().getId() : null;
+
+            if (staffBranchId == null || bookingBranchId == null || !staffBranchId.equals(bookingBranchId)) {
+                throw new BookingException("Bạn không có quyền cập nhật booking của chi nhánh khác");
+            }
+
+            // Staff chỉ được đổi sang CONFIRMED hoặc CANCELLED
+            if (newStatus != BookingStatus.CONFIRMED && newStatus != BookingStatus.CANCELLED) {
+                throw new BookingException("Bạn không có quyền đổi trạng thái này");
+            }
         }
 
         booking.setStatus(newStatus);
@@ -276,8 +306,28 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public void deleteBooking(Long bookingId) {
-        if (!bookingRepository.existsById(bookingId)) {
-            throw new RuntimeException("Booking not found");
+//        if (!bookingRepository.existsById(bookingId)) {
+//            throw new RuntimeException("Booking not found");
+//        }
+
+        UsersEntity currentUser = authService.getCurrentUser();
+        BookingsEntity booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingException("Không tìm thấy booking"));
+
+        if (currentUser.getRoleName().equals(RoleName.STAFF)) {
+            // Chỉ được xóa booking thuộc chi nhánh mình
+            Long staffBranchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            Long bookingBranchId = booking.getCourt().getBranch() != null ? booking.getCourt().getBranch().getId() : null;
+
+            if (staffBranchId == null || bookingBranchId == null || !staffBranchId.equals(bookingBranchId)) {
+                throw new BookingException("Bạn không có quyền xóa booking của chi nhánh khác");
+            }
+
+            // Không được xóa booking đã thanh toán hoặc đã hoàn thành
+            if (booking.getPaymentStatus() == PaymentStatus.PAID ||
+                    booking.getStatus() == BookingStatus.CONFIRMED) {
+                throw new BookingException("Không thể xóa booking đã thanh toán hoặc đã hoàn thành");
+            }
         }
         bookingRepository.deleteById(bookingId);
     }
@@ -317,8 +367,19 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDTO getBookingByIdForAdmin(Long bookingId) {
+        UsersEntity currentUser = authService.getCurrentUser();
+
         BookingsEntity booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingException("Booking not found"));
+
+        if (currentUser.getRoleName() == RoleName.STAFF) {
+            Long staffBranchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            Long bookingBranchId = booking.getCourt().getBranch() != null ? booking.getCourt().getBranch().getId() : null;
+
+            if (staffBranchId == null || bookingBranchId == null || !staffBranchId.equals(bookingBranchId)) {
+                throw new BookingException("Bạn không có quyền xem booking của chi nhánh khác");
+            }
+        }
 
         return BookingMapper.toBookingDTO(booking);
     }

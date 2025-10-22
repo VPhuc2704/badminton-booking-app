@@ -334,16 +334,34 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDTO processPayment(Long bookingId, PaymentMethod method, String adminName) {
+        UsersEntity currentUser = authService.getCurrentUser();
+
         //Lấy booking
         BookingsEntity booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BookingException("Booking not found"));
 
+        if (currentUser.getRoleName() == RoleName.STAFF) {
+            if (currentUser.getBranch() == null) {
+                throw new BookingException("Tài khoản của bạn chưa được gán chi nhánh, không thể xử lý thanh toán.");
+            }
+
+            Long staffBranchId = currentUser.getBranch().getId();
+            Long bookingBranchId = booking.getCourt().getBranch().getId();
+
+            if (!staffBranchId.equals(bookingBranchId)) {
+                throw new BookingException("Bạn không có quyền thanh toán booking của chi nhánh khác.");
+            }
+        } else if (currentUser.getRoleName() != RoleName.ADMIN) {
+            throw new BookingException("Bạn không có quyền thực hiện thao tác này.");
+        }
+
+
         if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new BookingException("Booking must be confirmed before payment");
+            throw new BookingException("Booking phải được xác nhận trước khi thanh toán.");
         }
 
         if (booking.getPaymentStatus() == PaymentStatus.PAID) {
-            throw new BookingException("Booking already paid");
+            throw new BookingException("Booking này đã được thanh toán.");
         }
 
         //Tạo transaction (booking 1-1)
@@ -387,6 +405,22 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingDTO createBookingByAdmin(AdminCreateBookingDTO bookingRequest) {
+
+        UsersEntity currentUser = authService.getCurrentUser();
+
+        CourtEntity court = courtRepository.findById(bookingRequest.getCourtId())
+                .orElseThrow(() -> new CourtException("Court not found"));
+
+        if (currentUser.getRoleName() == RoleName.STAFF) {
+            if (!currentUser.getBranch().getId().equals(court.getBranch().getId())) {
+                throw new BookingException("Bạn không có quyền tạo booking cho chi nhánh khác.");
+            }
+        }
+
+        if (!court.getIsActive() || court.getStatus() != CourtStatus.AVAILABLE) {
+            throw new CourtException("Court " + court.getCourtName() + "hiện không khả dụng để đặt.");
+        }
+
         validateBookingTime(
                 bookingRequest.getBookingDate(),
                 bookingRequest.getStartTime(),
@@ -402,13 +436,6 @@ public class BookingServiceImpl implements BookingService {
                     return userRepository.save(u);
                 });
 
-
-        CourtEntity court = courtRepository.findById(bookingRequest.getCourtId())
-                .orElseThrow(() -> new CourtException("Court not found"));
-
-        if (!court.getIsActive() || court.getStatus() != CourtStatus.AVAILABLE) {
-            throw new CourtException("Court " + court.getCourtName() + " is not available for booking.");
-        }
 
         CustomerEntity customer = customerRepository.findByUsersId(user.getId())
                 .orElseGet(() -> {

@@ -41,20 +41,4 @@ public class CustomerEntity extends BaseEntity{
 
     @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
     private List<BookingsEntity> bookings = new ArrayList<>();
-
-//    @Column(name = "customer_code")
-//    private String customerCode;
-//
-//    @Column(name = "date_of_birth")
-//    private Date dateOfBirth;
-//
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "gender")
-//    private GenderEnum gender;
-//
-//    @Column(name = "address")
-//    private String address;
-//
-//    @Column(name = "notes")
-//    private String notes;
 }

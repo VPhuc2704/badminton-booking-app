@@ -57,8 +57,9 @@ public class CustomerController {
                                                                       @AuthenticationPrincipal CustomUserDetails currentUser,
                                                                       HttpServletRequest request) {
         boolean isAdmin = currentUser.getUser().getRoleName() == RoleName.ADMIN;
+        boolean isStaffBranch = currentUser.getUser().getRoleName() == RoleName.STAFF;
 
-        if (!isAdmin) {
+        if (!isAdmin && !isStaffBranch) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>("Access denied", 403, null, request.getRequestURI()));
         }

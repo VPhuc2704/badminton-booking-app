@@ -34,4 +34,23 @@ public interface UserRepository extends JpaRepository<UsersEntity,Long> {
                                        @Param("keyword") String keyword,
                                        @Param("isActive") Boolean isActive,
                                        Pageable pageable);
+
+
+    @Query("""
+    SELECT u FROM UsersEntity u
+    WHERE u.roleName = :roleName
+    AND EXISTS (
+        SELECT 1 FROM BookingsEntity b
+        WHERE b.customer = u.customer
+        AND b.court.branch.id = :branchId
+    )
+""")
+    Page<UsersEntity> findAllCustomersByBranch(
+            @Param("roleName") RoleName roleName,
+            @Param("branchId") Long branchId,
+            @Param("keyword") String keyword,
+            @Param("isActive") Boolean isActive,
+            Pageable pageable
+    );
+
 }

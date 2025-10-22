@@ -6,12 +6,16 @@ import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.dto.requests.ChangePasswordRequest;
 import org.badmintonchain.model.dto.requests.CreateUserRequest;
 import org.badmintonchain.model.dto.response.UserInfoDTO;
+import org.badmintonchain.model.entity.BookingsEntity;
+import org.badmintonchain.model.entity.BranchEntity;
 import org.badmintonchain.model.entity.CustomerEntity;
 import org.badmintonchain.model.entity.UsersEntity;
 import org.badmintonchain.model.enums.RoleName;
 import org.badmintonchain.repository.BookingRepository;
+import org.badmintonchain.repository.BranchRepository;
 import org.badmintonchain.repository.CustomerRepository;
 import org.badmintonchain.repository.UserRepository;
+import org.badmintonchain.service.AuthService;
 import org.badmintonchain.service.CustomerService;
 import org.hibernate.validator.internal.constraintvalidators.bv.time.futureorpresent.FutureOrPresentValidatorForLocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -33,18 +38,46 @@ public class CustomerServiceImpl implements CustomerService {
     private  CustomerRepository customerRepository;
     @Autowired
     private BookingRepository  bookingRepository;
-    private FutureOrPresentValidatorForLocalDate futureOrPresentValidatorForLocalDate;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AuthService  authService;
+    @Autowired
+    private BranchRepository branchRepository;
 
     @Override
     public PageResponse<CustomerUserDTO> getAllUsers(int page, int size, String keyword, Boolean isActive) {
+        UsersEntity currentUser = authService.getCurrentUser();
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
 //        Page<UsersEntity> users = userRepository.findAll(pageable);
 
-        Page<UsersEntity> users = userRepository.findAllCustomers(RoleName.CUSTOMER, keyword != null ?  keyword : "" , isActive, pageable);
+        Page<UsersEntity> users;
+//                = userRepository.findAllCustomers(RoleName.CUSTOMER, keyword != null ?  keyword : "" , isActive, pageable);
 
+        if (currentUser.getRoleName() == RoleName.ADMIN) {
+            // ADMIN: xem toàn bộ khách hàng
+            users = userRepository.findAllCustomers(
+                    RoleName.CUSTOMER,
+                    keyword != null ? keyword : "",
+                    isActive,
+                    pageable
+            );
+        } else if (currentUser.getRoleName() == RoleName.STAFF) {
+            // STAFF: chỉ xem khách hàng thuộc chi nhánh của mình
+            Long branchId = currentUser.getBranch().getId();
+
+            users = userRepository.findAllCustomersByBranch(
+                    RoleName.CUSTOMER,
+                    branchId,
+                    keyword != null ? keyword : "",
+                    isActive,
+                    pageable
+            );
+        } else {
+            throw new UsersException("Bạn không có quyền xem danh sách khách hàng");
+        }
 
         Page<CustomerUserDTO> dtoPage = users.map(this::toDTO);
 
@@ -79,8 +112,11 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerUserDTO getUserDetail(Long userId) {
+        UsersEntity currentUser = authService.getCurrentUser();
+
         UsersEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsersException("User not found"));
+
         return toDTO(user);
     }
 

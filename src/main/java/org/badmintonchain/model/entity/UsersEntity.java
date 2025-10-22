@@ -52,6 +52,9 @@ public class UsersEntity extends BaseEntity{
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private VerificationToken verificationToken;
 
+    @OneToOne(mappedBy = "users")
+    private CustomerEntity customer;
+
     @OneToOne(mappedBy = "manager", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private BranchEntity  branch;
 

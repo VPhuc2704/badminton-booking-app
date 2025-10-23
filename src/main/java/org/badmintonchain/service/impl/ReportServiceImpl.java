@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -65,4 +66,52 @@ public class ReportServiceImpl implements ReportService {
 
         return new ReportResponse(totalBookings, completedBookings, newCustomers, totalRevenue, chart);
     }
+
+    @Override
+    public ReportResponse getDashboardByDateRange(LocalDate startDate, LocalDate endDate) {
+        // Tổng số booking
+        long totalBookings = bookingsRepository.countByBookingDateBetween(startDate, endDate);
+        long completedBookings = bookingsRepository.countByBookingDateBetweenAndStatus(startDate, endDate, BookingStatus.CONFIRMED);
+        long newCustomers = customerRepository.countNewCustomersBetweenDates(startDate, endDate);
+
+        // Tổng doanh thu
+        BigDecimal totalRevenue = transactionRepository.getRevenueBetweenDates(startDate, endDate);
+        if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
+
+        Map<String, BigDecimal> chart = new LinkedHashMap<>();
+
+        if (startDate.equals(endDate)) {
+            for (int h = 6; h <= 22; h++) {
+                chart.put(h + "h", BigDecimal.ZERO);
+            }
+
+            List<Object[]> results = transactionRepository.getRevenueByHours(startDate, endDate);
+            for (Object[] row : results) {
+                int hour = ((Number) row[0]).intValue();
+                BigDecimal amount = (BigDecimal) row[1];
+                if (hour >= 6 && hour <= 22) {
+                    chart.put(hour + "h", amount);
+                }
+            }
+        } else {
+            // Khoảng nhiều ngày → chart theo ngày
+            LocalDate current = startDate;
+            while (!current.isAfter(endDate)) {
+                chart.put(current.toString(), BigDecimal.ZERO);
+                current = current.plusDays(1);
+            }
+
+            List<Object[]> results = transactionRepository.getRevenueByDayBetweenDates(startDate, endDate);
+            for (Object[] row : results) {
+                LocalDate day = (LocalDate) row[0];
+                BigDecimal amount = (BigDecimal) row[1];
+                chart.put(day.toString(), amount);
+            }
+        }
+
+        return new ReportResponse(totalBookings, completedBookings, newCustomers, totalRevenue, chart);
+    }
+
+
+
 }

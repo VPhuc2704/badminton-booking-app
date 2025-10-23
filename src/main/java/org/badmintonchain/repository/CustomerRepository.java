@@ -3,6 +3,7 @@ package org.badmintonchain.repository;
 import org.badmintonchain.model.entity.CustomerEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -18,5 +19,14 @@ public interface CustomerRepository extends JpaRepository<CustomerEntity,Long> {
     @Query("SELECT COUNT(c) FROM CustomerEntity c " +
             "WHERE MONTH(c.createAt) = :month AND YEAR(c.createAt) = :year")
     long countNewCustomersByMonth(int month, int year);
+
+    @Query("""
+        SELECT COUNT(c)
+        FROM CustomerEntity c
+        WHERE DATE(c.createAt) BETWEEN :startDate AND :endDate
+    """)
+    long countNewCustomersBetweenDates(@Param("startDate") LocalDate startDate,
+                                       @Param("endDate") LocalDate endDate);
+
 
 }

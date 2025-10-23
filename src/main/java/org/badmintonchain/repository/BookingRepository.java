@@ -95,4 +95,11 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
             "WHERE MONTH(b.bookingDate) = :month AND YEAR(b.bookingDate) = :year " +
             "AND b.status = :status")
     long countByMonthAndYearAndStatus(int month, int year, BookingStatus status);
+
+
+    // Tổng số booking trong khoảng ngày
+    long countByBookingDateBetween(LocalDate startDate, LocalDate endDate);
+
+    // Số booking đã hoàn thành (CONFIRMED) trong khoảng ngày
+    long countByBookingDateBetweenAndStatus(LocalDate startDate, LocalDate endDate, BookingStatus status);
 }

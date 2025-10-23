@@ -29,4 +29,17 @@ public class ReportController {
             @RequestParam int year) {
         return reportService.getDashboardByMonth(month, year);
     }
+
+    @GetMapping("/range")
+    public ReportResponse getDashboardByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        // Nếu endDate không truyền → mặc định bằng startDate
+        if (endDate == null) {
+            endDate = startDate;
+        }
+
+        return reportService.getDashboardByDateRange(startDate, endDate);
+    }
 }

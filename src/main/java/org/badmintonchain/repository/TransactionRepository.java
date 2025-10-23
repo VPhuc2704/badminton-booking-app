@@ -39,40 +39,45 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
             "GROUP BY DAY(t.transactionDate) ORDER BY DAY(t.transactionDate)")
     List<Object[]> getRevenueByDayInMonth(int month, int year);
 
-
-    @Query("""
+    // Tổng doanh thu (nếu branchId null => toàn hệ thống, ngược lại => lọc chi nhánh)
+     @Query("""
         SELECT SUM(t.amount)
         FROM TransactionEntity t
         WHERE t.booking.paymentStatus = 'PAID'
           AND t.transactionDate BETWEEN :startDate AND :endDate
+          AND (:branchId IS NULL OR t.booking.court.branch.id = :branchId)
     """)
     BigDecimal getRevenueBetweenDates(@Param("startDate") LocalDate startDate,
-                                      @Param("endDate") LocalDate endDate);
+                                      @Param("endDate") LocalDate endDate,
+                                      @Param("branchId") Long branchId);
 
+    // Doanh thu theo ngày
     @Query("""
         SELECT t.transactionDate, SUM(t.amount)
         FROM TransactionEntity t
         WHERE t.booking.paymentStatus = 'PAID'
           AND t.transactionDate BETWEEN :startDate AND :endDate
+          AND (:branchId IS NULL OR t.booking.court.branch.id = :branchId)
         GROUP BY t.transactionDate
         ORDER BY t.transactionDate
     """)
     List<Object[]> getRevenueByDayBetweenDates(@Param("startDate") LocalDate startDate,
-                                               @Param("endDate") LocalDate endDate);
+                                               @Param("endDate") LocalDate endDate,
+                                               @Param("branchId") Long branchId);
 
+    // Doanh thu theo giờ
     @Query("""
         SELECT HOUR(t.booking.startTime), SUM(t.amount)
         FROM TransactionEntity t
         WHERE t.booking.paymentStatus = 'PAID'
           AND t.transactionDate BETWEEN :startDate AND :endDate
+          AND (:branchId IS NULL OR t.booking.court.branch.id = :branchId)
         GROUP BY HOUR(t.booking.startTime)
         ORDER BY HOUR(t.booking.startTime)
     """)
     List<Object[]> getRevenueByHours(@Param("startDate") LocalDate startDate,
-                                     @Param("endDate") LocalDate endDate);
-
-
-
+                                     @Param("endDate") LocalDate endDate,
+                                     @Param("branchId") Long branchId);
 
 
 }

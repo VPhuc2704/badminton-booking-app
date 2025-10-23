@@ -21,12 +21,17 @@ public interface CustomerRepository extends JpaRepository<CustomerEntity,Long> {
     long countNewCustomersByMonth(int month, int year);
 
     @Query("""
-        SELECT COUNT(c)
-        FROM CustomerEntity c
-        WHERE DATE(c.createAt) BETWEEN :startDate AND :endDate
-    """)
-    long countNewCustomersBetweenDates(@Param("startDate") LocalDate startDate,
-                                       @Param("endDate") LocalDate endDate);
+    SELECT COUNT(DISTINCT c)
+    FROM CustomerEntity c
+    JOIN c.bookings b
+    WHERE DATE(c.createAt) BETWEEN :startDate AND :endDate
+    AND (:branchId IS NULL OR b.court.branch.id = :branchId)
+""")
+    long countNewCustomersBetweenDates(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("branchId") Long branchId);
+
 
 
 }

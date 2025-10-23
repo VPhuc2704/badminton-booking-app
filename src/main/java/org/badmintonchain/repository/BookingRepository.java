@@ -98,8 +98,26 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
 
 
     // Tổng số booking trong khoảng ngày
-    long countByBookingDateBetween(LocalDate startDate, LocalDate endDate);
+    @Query("""
+        SELECT COUNT(b)
+        FROM BookingsEntity b
+        WHERE b.bookingDate BETWEEN :start AND :end
+        AND (:branchId IS NULL OR b.court.branch.id = :branchId)
+    """)
+    long countByBookingDateBetweenAndBranch(@Param("start") LocalDate start,
+                                            @Param("end") LocalDate end,
+                                            @Param("branchId") Long branchId);
 
-    // Số booking đã hoàn thành (CONFIRMED) trong khoảng ngày
-    long countByBookingDateBetweenAndStatus(LocalDate startDate, LocalDate endDate, BookingStatus status);
+    @Query("""
+        SELECT COUNT(b)
+        FROM BookingsEntity b
+        WHERE b.bookingDate BETWEEN :start AND :end
+        AND b.status = :status
+        AND (:branchId IS NULL OR b.court.branch.id = :branchId)
+    """)
+    long countByBookingDateBetweenAndStatusAndBranch(@Param("start") LocalDate start,
+                                                     @Param("end") LocalDate end,
+                                                     @Param("status") BookingStatus status,
+                                                     @Param("branchId") Long branchId);
+
 }

@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BranchRepository extends JpaRepository<BranchEntity, Long> {
     boolean existsByManager_Id(Long managerId);
+    BranchEntity findByManager_Id(Long userId);
 }

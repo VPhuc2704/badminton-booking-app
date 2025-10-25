@@ -33,9 +33,14 @@ public class EndpointAPI {
             "/api/dashboard/**"
     };
 
-    public static final String[] ADMIN_API_ENDPOINTS = {
-            "/api/admin/branches/**",
-    };
+//    public static final String[] ADMIN_API_ENDPOINTS = {
+//            "/api/admin/branches/**",
+//    };
+//
+//    public static final String[] BRANCH_API_ENDPOINTS = {
+//            "/api/branches/**"
+//    };
+
 
 
 

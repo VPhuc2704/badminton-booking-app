@@ -52,6 +52,6 @@ public class BranchEntity extends  BaseEntity{
 
         // Một chi nhánh có nhiều sân
         @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-        private List<CourtEntity> courts;
+        private List<CourtEntity> courts =  new ArrayList<>();
 
 }

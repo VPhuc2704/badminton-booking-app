@@ -92,15 +92,16 @@ public class CustomerController {
     ) {
         Long currentUserId = currentUser.getUser().getId();
         boolean isAdmin = currentUser.getUser().getRoleName() == RoleName.ADMIN;
+        boolean isStaff = currentUser.getUser().getRoleName() == RoleName.STAFF;
         boolean isSelf = currentUserId.equals(id);
 
-        if (!isAdmin && !isSelf) {
+        if (!isAdmin && !isStaff && !isSelf) {
             // user thường mà update người khác -> cấm
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>("Access denied", 403, null, request.getRequestURI()));
         }
 
-        CustomerUserDTO updated = customerService.updateUser(id, requestDto, isAdmin);
+        CustomerUserDTO updated = customerService.updateUser(id, requestDto, isAdmin, isStaff);
 
         return ResponseEntity.ok(
                 new ApiResponse<>("User updated successfully", HttpStatus.OK.value(), updated, request.getRequestURI())

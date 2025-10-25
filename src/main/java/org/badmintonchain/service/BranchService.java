@@ -10,5 +10,6 @@ public interface BranchService {
     void deleteBranch(Long id);
     BranchDTO getBranchById(Long id);
     List<BranchDTO> getAllBranches();
+    BranchDTO getMyBranch();
     BranchDTO createBranchWithManager(BranchWithManagerDTO dto);
 }

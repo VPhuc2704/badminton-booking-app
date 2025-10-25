@@ -10,7 +10,7 @@ public interface CustomerService {
     PageResponse<CustomerUserDTO> getAllUsers(int page, int size, String keyword, Boolean isActive);
     PageResponse<CustomerUserDTO> getAllAdmins(int page, int size);
     CustomerUserDTO getUserDetail(Long userId);
-    CustomerUserDTO updateUser(Long userId, CustomerUserDTO request, boolean isAdmin);
+    CustomerUserDTO updateUser(Long userId, CustomerUserDTO request, boolean isAdmin, boolean isStaff);
     void deleteUser(Long userId);
     void changePassword(Long userId, ChangePasswordRequest request);
     CustomerUserDTO createUser(CreateUserRequest request);

@@ -120,4 +120,5 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
                                                      @Param("status") BookingStatus status,
                                                      @Param("branchId") Long branchId);
 
+    boolean  existsByCustomer_Users_IdAndCourt_Branch_Id(Long userId, Long branchId);
 }

@@ -95,7 +95,7 @@ public class CustomerServiceImpl implements CustomerService {
     public PageResponse<CustomerUserDTO> getAllAdmins(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
-        Page<UsersEntity> users = userRepository.findAllByRoleName(RoleName.ADMIN, pageable);
+        Page<UsersEntity> users = userRepository.findAllByRoleNameIn(List.of(RoleName.ADMIN, RoleName.STAFF) , pageable);
 
         Page<CustomerUserDTO> dtoPage = users.map(this::toDTO);
 
@@ -122,34 +122,62 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional
-    public CustomerUserDTO updateUser(Long userId, CustomerUserDTO request, boolean isAdmin) {
+    public CustomerUserDTO updateUser(Long userId, CustomerUserDTO request, boolean isAdmin, boolean isStaff) {
+
+        UsersEntity currentUser = authService.getCurrentUser();
+
+        boolean isSelf = currentUser.getId().equals(userId);
+
         UsersEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsersException("User not found"));
 
-        // --- USER chỉ được update 1 số trường ---
-        if (!isAdmin) {
-            if (request.getFullName() != null) {
-                user.setFullName(request.getFullName());
-            }
-//            if (request.getEmail() != null) {
-//                user.setEmail(request.getEmail());
-//            }
-        }
-
         // --- ADMIN có thể update tất cả ---
-        else {
-            if (request.getFullName() != null) {
-                user.setFullName(request.getFullName());
+        if (isAdmin) {
+            if (request.getFullName() != null) user.setFullName(request.getFullName());
+            if (request.getActive() != null) user.setActive(request.getActive());
+            if (request.getRoleName() != null) user.setRoleName(RoleName.valueOf(request.getRoleName()));
+            //            if (request.getEmail() != null) {
+//                user.setEmail(request.getEmail());
+//            }
+
+        }
+        // --- STAFF có quyền hạn trung gian ---
+        else if (isStaff) {
+            if (user.getRoleName() == RoleName.ADMIN) {
+                throw new UsersException("Staff không được chỉnh sửa Admin");
             }
+
+            // staff không được chỉnh staff khác (nhưng được chỉnh chính mình)
+            if (user.getRoleName() == RoleName.STAFF && !isSelf) {
+                throw new UsersException("Staff không được chỉnh sửa Staff khác");
+            }
+
+            // Nếu staff đang chỉnh người khác (không phải self) -> kiểm tra booking tại branch
+            if (!isSelf) {
+                BranchEntity staffBranch = currentUser.getBranch();
+                if (staffBranch == null) {
+                    throw new UsersException("Staff chưa được gán chi nhánh nào");
+                }
+
+                boolean hasBookingAtBranch = bookingRepository
+                        .existsByCustomer_Users_IdAndCourt_Branch_Id(userId, staffBranch.getId());
+
+                if (!hasBookingAtBranch) {
+                    throw new UsersException("Bạn chỉ có thể chỉnh sửa người dùng từng đặt sân tại chi nhánh bạn quản lý");
+                }
+            }
+
+
+            if (request.getFullName() != null) user.setFullName(request.getFullName());
+            if (request.getActive() != null) user.setActive(request.getActive());
+            // KHÔNG được đổi roleName, email
+        }
+        // --- USER chỉ được update 1 số trường ---
+        else {
+            if (request.getFullName() != null) {user.setFullName(request.getFullName());}
 //            if (request.getEmail() != null) {
 //                user.setEmail(request.getEmail());
 //            }
-            if (request.getActive() != null) {
-                user.setActive(request.getActive());
-            }
-            if (request.getRoleName() != null) {
-                user.setRoleName(RoleName.valueOf(request.getRoleName()));
-            }
         }
 
         userRepository.save(user);

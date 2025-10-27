@@ -20,9 +20,14 @@ public class BookingMapper {
         booking.setCustomer(
                 CustomerMapper.toCustomerDTO(bookingEntity.getCustomer())
         );
-        booking.setCourt(
-                CourtMapper.toCourtDTO(bookingEntity.getCourt())
-        );
+//        booking.setCourt(
+//                CourtMapper.toCourtDTO(bookingEntity.getCourt())
+//        );
+        if (bookingEntity.getCourt() != null) {
+            booking.setCourt(CourtMapper.toCourtDTO(bookingEntity.getCourt()));
+        } else {
+            booking.setCourt(null);
+        }
         booking.setBookingDate(bookingEntity.getBookingDate());
         booking.setStartTime(bookingEntity.getStartTime());
         booking.setEndTime(bookingEntity.getEndTime());

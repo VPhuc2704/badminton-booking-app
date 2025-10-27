@@ -28,8 +28,8 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
 //    )
     @Query(value = """
     SELECT b.* FROM bookings b
-    JOIN courts c ON b.court_id = c.id
-    JOIN branches br ON c.branch_id = br.id
+    LEFT JOIN courts c ON b.court_id = c.id
+    LEFT JOIN branches br ON c.branch_id = br.id
     WHERE (:branchId IS NULL OR br.id = :branchId)
         AND (:year IS NULL OR EXTRACT(ISOYEAR FROM b.booking_date) = :year)
         AND (:month IS NULL OR EXTRACT(MONTH FROM b.booking_date) = :month)
@@ -39,8 +39,8 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long>{
     """,
             countQuery = """
     SELECT COUNT(*) FROM bookings b
-    JOIN courts c ON b.court_id = c.id
-    JOIN branches br ON c.branch_id = br.id
+    LEFT JOIN courts c ON b.court_id = c.id
+    LEFT JOIN branches br ON c.branch_id = br.id
     WHERE (:branchId IS NULL OR br.id = :branchId)
         AND (:year IS NULL OR EXTRACT(ISOYEAR FROM b.booking_date) = :year)
         AND (:month IS NULL OR EXTRACT(MONTH FROM b.booking_date) = :month)

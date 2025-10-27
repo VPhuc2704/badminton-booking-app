@@ -2,6 +2,7 @@ package org.badmintonchain.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.badmintonchain.model.dto.BranchDTO;
+import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.dto.requests.BranchWithManagerDTO;
 import org.badmintonchain.service.BranchService;
 import org.badmintonchain.utils.ApiResponse;
@@ -54,8 +55,9 @@ public class BranchController {
     }
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<BranchDTO>>> getAllBranches() {
-        List<BranchDTO> list = branchService.getAllBranches();
+    public ResponseEntity<ApiResponse<PageResponse<BranchDTO>>> getAllBranches( @RequestParam(defaultValue = "0") int page,
+                                                                                @RequestParam(defaultValue = "100") int size) {
+        PageResponse<BranchDTO> list = branchService.getAllBranches(page, size);
         return ResponseEntity.ok(
                 new ApiResponse<>("Danh sách chi nhánh", 200, list, "/api/branches")
         );

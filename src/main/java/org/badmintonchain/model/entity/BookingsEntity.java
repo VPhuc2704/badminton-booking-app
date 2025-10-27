@@ -48,7 +48,7 @@ public class BookingsEntity extends BaseEntity{
     private CustomerEntity customer;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "court_id", nullable = false)
+    @JoinColumn(name = "court_id", nullable = true)
     private CourtEntity court;
 
     @Column(name = "booking_date", nullable = false)

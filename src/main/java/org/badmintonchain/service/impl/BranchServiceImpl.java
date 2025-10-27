@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.badmintonchain.exceptions.CourtException;
 import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.BranchDTO;
+import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.dto.requests.BranchWithManagerDTO;
 import org.badmintonchain.model.entity.BranchEntity;
 import org.badmintonchain.model.entity.UsersEntity;
@@ -13,6 +14,10 @@ import org.badmintonchain.repository.BranchRepository;
 import org.badmintonchain.repository.UserRepository;
 import org.badmintonchain.service.AuthService;
 import org.badmintonchain.service.BranchService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,9 +124,22 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
-    public List<BranchDTO> getAllBranches() {
-        List<BranchEntity> branches = branchRepository.findAll();
-        return branches.stream().map(BranchMapper::toDTO).toList();
+    public PageResponse<BranchDTO> getAllBranches( int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC,"id"));
+        Page<BranchEntity> branches = branchRepository.findAll(pageable);
+
+        List<BranchDTO> branchDTOS = branches.getContent().stream().map(BranchMapper::toDTO).toList();
+
+        return new PageResponse<>(
+
+                branchDTOS,
+                branches.getNumber(),        // trang hiện tại
+                branches.getSize(),          // số lượng mỗi trang
+                branches.getTotalElements(), // tổng số bản ghi
+                branches.getTotalPages(),    // tổng số trang
+                branches.isFirst(),          // có phải trang đầu
+                branches.isLast()
+        );
     }
 
     @Override

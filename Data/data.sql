@@ -227,3 +227,13 @@ VALUES
     (300000.00, '2025-09-19', 'TRANSFER', 24, 1, '2025-09-19  19:00:00', '2025-09-19  19:00:00'),
     (300000.00, '2025-09-20', 'COD', 25, 1, '2025-09-20 18:00:00', '2025-09-20 18:00:00'),
     (300000.00, '2025-09-20', 'TRANSFER', 26, 1, '2025-09-20  19:00:00', '2025-09-20  19:00:00');
+
+
+ALTER TABLE bookings
+DROP CONSTRAINT IF EXISTS bookings_court_id_fkey;
+
+ALTER TABLE bookings
+    ADD CONSTRAINT bookings_court_id_fkey
+        FOREIGN KEY (court_id)
+            REFERENCES courts(id)
+            ON DELETE SET NULL;

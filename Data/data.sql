@@ -237,3 +237,6 @@ ALTER TABLE bookings
         FOREIGN KEY (court_id)
             REFERENCES courts(id)
             ON DELETE SET NULL;
+
+ALTER TABLE bookings
+    ALTER COLUMN court_id DROP NOT NULL;

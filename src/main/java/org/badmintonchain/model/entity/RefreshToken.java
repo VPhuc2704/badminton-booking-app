@@ -25,9 +25,6 @@ public class RefreshToken {
 
     @Column(name = "token", columnDefinition = "TEXT",nullable = false, length = 512)
     private String refreshToken;
-//
-//    @Column(nullable = false)
-//    private Instant expiryDate;
 
     @Column(nullable = false)
     private boolean revoked = false;

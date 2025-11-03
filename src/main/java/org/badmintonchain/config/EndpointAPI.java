@@ -13,7 +13,8 @@ public class EndpointAPI {
             "/court/img/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
-            "/swagger-ui.html"
+            "/swagger-ui.html",
+            "/api/branches"
 //            "api/courts/*/availability"
     };
 
@@ -32,14 +33,6 @@ public class EndpointAPI {
             "/api/admin/services/*",
             "/api/dashboard/**"
     };
-
-//    public static final String[] ADMIN_API_ENDPOINTS = {
-//            "/api/admin/branches/**",
-//    };
-//
-//    public static final String[] BRANCH_API_ENDPOINTS = {
-//            "/api/branches/**"
-//    };
 
 
 

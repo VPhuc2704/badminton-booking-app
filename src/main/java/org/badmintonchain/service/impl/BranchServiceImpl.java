@@ -6,6 +6,7 @@ import org.badmintonchain.exceptions.UsersException;
 import org.badmintonchain.model.dto.BranchDTO;
 import org.badmintonchain.model.dto.PageResponse;
 import org.badmintonchain.model.dto.requests.BranchWithManagerDTO;
+import org.badmintonchain.model.dto.response.BranchPublic;
 import org.badmintonchain.model.entity.BranchEntity;
 import org.badmintonchain.model.entity.UsersEntity;
 import org.badmintonchain.model.enums.RoleName;
@@ -216,4 +217,19 @@ public class BranchServiceImpl implements BranchService {
         return BranchMapper.toDTO(saved);
     }
 
+
+    @Override
+    public List<BranchPublic> publicBranches() {
+        List<BranchEntity> branches = branchRepository.findAll();
+
+        List<BranchPublic> branchDTOS = branches.stream()
+                .map(branchEntity -> new BranchPublic(
+                        branchEntity.getId(),
+                        branchEntity.getBranchName(),
+                        branchEntity.getAddress(),
+                        branchEntity.getPhone()))
+                .toList();
+
+        return branchDTOS;
+    }
 }

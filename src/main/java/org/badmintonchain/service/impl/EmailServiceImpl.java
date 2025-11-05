@@ -68,39 +68,68 @@ public class EmailServiceImpl implements EmailService {
         };
 
         String body = """
-            <html>
-              <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h2 style="color:#2ecc71;">%s</h2>
-                <p>Xin chào <b>%s</b>,</p>
-                <p>%s</p>
-
-                <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%%;">
-                  <tr>
-                    <td><b>Mã đặt sân</b></td>
-                    <td>%s</td>
-                  </tr>
-                  <tr>
-                    <td><b>Sân</b></td>
-                    <td>%s (%s)</td>
-                  </tr>
-                  <tr>
-                    <td><b>Thời gian</b></td>
-                    <td>%s, từ %s đến %s</td>
-                  </tr>
-                  <tr>
-                    <td><b>Tổng tiền</b></td>
-                    <td>%s VND</td>
-                  </tr>
-                  <tr>
-                    <td><b>Số điện thoại</b></td>
-                    <td>%s</td>
-                  </tr>
-                </table>
-
-                <p style="margin-top:20px;">Chuẩn bị sẵn sàng để có một buổi chơi tuyệt vời nhé!</p>
-                <p>Hẹn gặp bạn tại sân!</p>
-              </body>
-            </html>
+                <html>
+                  <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color:#f8f9fa; padding:30px;">
+                    <div style="max-width:600px; margin:auto; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                
+                      <!-- Header -->
+                      <div style="background-color:#2ecc71; color:white; text-align:center; padding:20px 10px;">
+                        <h2 style="margin:0;">%s</h2>
+                      </div>
+                
+                      <!-- Content -->
+                      <div style="padding:25px;">
+                        <p style="font-size:16px;">Xin chào <b>%s</b>,</p>
+                        <p style="font-size:15px; color:#333;">%s</p>
+                
+                        <table style="width:100%%; border-collapse:collapse; margin-top:15px; font-size:14px;">
+                          <tr style="background-color:#f2f2f2;">
+                            <td style="padding:10px; font-weight:bold; width:40%%;">Mã đặt sân</td>
+                            <td style="padding:10px;">%s</td>
+                          </tr>
+                          <tr>
+                            <td style="padding:10px; font-weight:bold;">Sân</td>
+                            <td style="padding:10px;">%s <span style="color:#777;">(%s)</span></td>
+                          </tr>
+                          <tr style="background-color:#f2f2f2;">
+                            <td style="padding:10px; font-weight:bold;">Thời gian</td>
+                            <td style="padding:10px;">%s, từ %s đến %s</td>
+                          </tr>
+                          <tr>
+                            <td style="padding:10px; font-weight:bold;">Tổng tiền</td>
+                            <td style="padding:10px; color:#27ae60; font-weight:bold;">%s VND</td>
+                          </tr>
+                          <tr style="background-color:#f2f2f2;">
+                            <td style="padding:10px; font-weight:bold;">Số điện thoại</td>
+                            <td style="padding:10px;">%s</td>
+                          </tr>
+                          <tr>
+                            <td style="padding:10px; font-weight:bold;">Chi nhánh</td>
+                            <td style="padding:10px;">
+                                <b>%s</b><br>
+                                %s<br>
+                                <span style="color:#555;">Hotline: %s</span>
+                            </td>
+                          </tr>
+                        </table>
+                
+                        <div style="margin-top:25px; text-align:center;">
+                            <a href="#" style="background-color:#2ecc71; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:500;">Xem chi tiết đặt sân</a>
+                        </div>
+                
+                        <p style="margin-top:25px; font-size:14px; color:#666; text-align:center;">
+                          Cảm ơn bạn đã tin tưởng hệ thống của chúng tôi!<br>
+                          Chuẩn bị sẵn sàng để có một buổi chơi tuyệt vời nhé 🎾
+                        </p>
+                      </div>
+                
+                      <!-- Footer -->
+                      <div style="background-color:#f2f2f2; padding:15px; text-align:center; font-size:12px; color:#777;">
+                        &copy; 2025 Court Booking System. All rights reserved.
+                      </div>
+                    </div>
+                  </body>
+                </html>
             """.formatted(
                 header,
                 bookingEvent.getFullName(),
@@ -112,7 +141,10 @@ public class EmailServiceImpl implements EmailService {
                 bookingEvent.getStartTime(),
                 bookingEvent.getEndTime(),
                 bookingEvent.getTotalAmount().toPlainString(),
-                bookingEvent.getCustomerPhone()
+                bookingEvent.getCustomerPhone(),
+                bookingEvent.getBranchName(),
+                bookingEvent.getBranchAddress(),
+                bookingEvent.getBranchPhone()
         );
 
         try {

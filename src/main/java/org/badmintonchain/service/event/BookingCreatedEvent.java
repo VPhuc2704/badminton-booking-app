@@ -23,4 +23,8 @@ public class BookingCreatedEvent {
     private LocalTime endTime;
     private BigDecimal totalAmount;
     private String customerPhone;
+
+    private String branchName;
+    private String branchAddress;
+    private String branchPhone;
 }

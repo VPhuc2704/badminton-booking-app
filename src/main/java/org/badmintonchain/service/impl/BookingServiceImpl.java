@@ -122,7 +122,10 @@ public class BookingServiceImpl implements BookingService {
                 saved.getStartTime(),
                 saved.getEndTime(),
                 saved.getTotalAmount(),
-                customer.getNumberPhone()
+                customer.getNumberPhone(),
+                court.getBranch().getBranchName(),
+                court.getBranch().getAddress(),
+                court.getBranch().getPhone()
         );
         emailService.sendBookingEmail(event, EmailType.PENDING);
         return BookingMapper.toBookingDTO(saved);
@@ -194,7 +197,11 @@ public class BookingServiceImpl implements BookingService {
                 saved.getStartTime(),
                 saved.getEndTime(),
                 saved.getTotalAmount(),
-                booking.getCustomer().getNumberPhone()
+                booking.getCustomer().getNumberPhone(),
+                booking.getCourt().getBranch().getBranchName(),
+                booking.getCourt().getBranch().getAddress(),
+                booking.getCourt().getBranch().getPhone()
+
         );
         emailService.sendBookingEmail(event, EmailType.CANCELLED);
 
@@ -282,7 +289,10 @@ public class BookingServiceImpl implements BookingService {
                     booking.getStartTime(),
                     booking.getEndTime(),
                     booking.getTotalAmount(),
-                    booking.getCustomer().getNumberPhone()
+                    booking.getCustomer().getNumberPhone(),
+                    booking.getCourt().getBranch().getBranchName(),
+                    booking.getCourt().getBranch().getAddress(),
+                    booking.getCourt().getBranch().getPhone()
             ));
         } else if (newStatus == BookingStatus.CANCELLED) {
             BookingCreatedEvent event = new BookingCreatedEvent(
@@ -296,7 +306,10 @@ public class BookingServiceImpl implements BookingService {
                     saved.getStartTime(),
                     saved.getEndTime(),
                     saved.getTotalAmount(),
-                    booking.getCustomer().getNumberPhone()
+                    booking.getCustomer().getNumberPhone(),
+                    booking.getCourt().getBranch().getBranchName(),
+                    booking.getCourt().getBranch().getAddress(),
+                    booking.getCourt().getBranch().getPhone()
             );
             emailService.sendBookingEmail(event, EmailType.CANCELLED);
         }
@@ -483,7 +496,10 @@ public class BookingServiceImpl implements BookingService {
                 saved.getStartTime(),
                 saved.getEndTime(),
                 saved.getTotalAmount(),
-                customer.getNumberPhone()
+                customer.getNumberPhone(),
+                saved.getCourt().getBranch().getBranchName(),
+                saved.getCourt().getBranch().getAddress(),
+                saved.getCourt().getBranch().getPhone()
         );
         emailService.sendBookingEmail(event, EmailType.CONFIRMATION);
 

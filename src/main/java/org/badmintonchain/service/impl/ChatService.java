@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.badmintonchain.model.entity.BranchEntity;
 import org.badmintonchain.model.entity.CourtEntity;
 import org.badmintonchain.model.entity.ServicesEntity;
+import org.badmintonchain.repository.BranchRepository;
 import org.badmintonchain.repository.CourtRepository;
 import org.badmintonchain.repository.ServiceRepository;
 import org.badmintonchain.service.CourtService;
@@ -34,6 +36,7 @@ public class ChatService {
     private final CourtRepository courtRepository;
     private final CourtService courtService;
     private final ServiceRepository serviceRepository;
+    private final BranchRepository branchRepository;
 
     @Value("${weather.api.key}")
     private String weatherApiKey;
@@ -65,6 +68,12 @@ public class ChatService {
             ],
             "suggestedServices": ["Thuê giày", "Nước uống", "HLV"]
         }
+        
+        Nếu user hỏi về tổng số hoặc danh sách các chi nhánh, trả về:
+        {"intent":"branchList"}
+        
+        Nếu user hỏi về chi nhánh hoặc sân ở chi nhánh nào, trả về:
+        {"intent":"branchInfo","branchName":"Tên chi nhánh hoặc khu vực","adress":"Địa chỉ của chi nhánh"}
         
         Lưu ý:
         - "hôm nay" = ngày hiện tại
@@ -147,7 +156,22 @@ public class ChatService {
 
             if (suggestionNode.has("suggestedCourts")) {
                 for (JsonNode court : suggestionNode.get("suggestedCourts")) {
+                    String courtName = court.get("courtName").asText();
                     String typeVN = mapCourtTypeToVietnamese(court.get("type").asText());
+
+                    CourtEntity courtEntity = courtRepository.findAll().stream()
+                            .filter(c -> c.getCourtName().equalsIgnoreCase(courtName))
+                            .findFirst()
+                            .orElse(null);
+
+                    String branchInfo = "";
+                    if (courtEntity != null && courtEntity.getBranch() != null) {
+                        BranchEntity b = courtEntity.getBranch();
+                        branchInfo = String.format(" | Chi nhánh: %s - %s",
+                                b.getBranchName(),
+                                b.getAddress() != null ? b.getAddress() : "Chưa cập nhật");
+                    }
+
                     sb.append("- ").append(court.get("courtName").asText())
                             .append(" (").append(typeVN).append(")\n");
                 }
@@ -163,7 +187,61 @@ public class ChatService {
             }
 
             return sb.toString();
-        } else {
+        }else if (intent.contains("\"branchList\"")) {
+            List<BranchEntity> branches = branchRepository.findAll();
+
+            if (branches.isEmpty()) {
+                return "Hiện hệ thống chưa có chi nhánh nào được đăng ký.";
+            }
+
+            StringBuilder sb = new StringBuilder("Hệ thống hiện có " + branches.size() + " chi nhánh:\n");
+            for (BranchEntity branch : branches) {
+                sb.append("- ").append(branch.getBranchName());
+                if (branch.getAddress() != null) {
+                    sb.append(" (").append(branch.getAddress()).append(")");
+                }
+                sb.append("\n");
+            }
+
+            return sb.toString();
+        } else if (intent.contains("\"branchInfo\"")) {
+            JsonNode node = parseIntentResponse(intent);
+            String branchName = node.has("branchName") ? node.get("branchName").asText() : null;
+
+            if (branchName == null || branchName.isBlank()) {
+                return "Bạn muốn xem sân ở chi nhánh nào ạ? (ví dụ: Quận 1, Bình Thạnh, Thủ Đức...)";
+            }
+
+            List<CourtEntity> courtsByBranch = courtRepository.findAll()
+                    .stream()
+                    .filter(c -> c.getBranch() != null &&
+                            c.getBranch().getBranchName() != null &&
+                            c.getBranch().getBranchName().toLowerCase().contains(branchName.toLowerCase()))
+                    .toList();
+
+            if (courtsByBranch.isEmpty()) {
+                return "Xin lỗi, hiện không tìm thấy sân nào thuộc chi nhánh " + branchName + ".";
+            }
+
+            // lấy thông tin chi nhánh đầu tiên
+            String address = courtsByBranch.get(0).getBranch().getAddress();
+            String phone = courtsByBranch.get(0).getBranch().getPhone();
+
+            StringBuilder sb = new StringBuilder("Các sân tại chi nhánh **" + branchName + "**:\n");
+            for (CourtEntity court : courtsByBranch) {
+                sb.append("- ").append(court.getCourtName())
+                        .append(" (").append(mapCourtTypeToVietnamese(court.getCourtType().name())).append(")")
+                        .append(" | ").append(String.format("%,.0f VND/giờ", court.getHourlyRate()))
+                        .append("\n");
+            }
+
+            sb.append("\nĐịa chỉ: ").append(address != null ? address : "Chưa cập nhật");
+            sb.append("\nSĐT: ").append(phone != null ? phone : "Chưa có thông tin");
+
+            return sb.toString();
+        }
+
+        else {
             // Trường hợp hỏi dịch vụ
             return openAiClient.chatCompletion(
                     """
@@ -472,6 +550,16 @@ public class ChatService {
                         ? String.format("\nGiá: %,.0f VND/giờ", court.getHourlyRate())
                         : "";
 
+                String branchInfo = "";
+                if (court != null && court.getBranch() != null) {
+                    BranchEntity branch = court.getBranch();
+                    branchInfo = String.format(
+                            "\nChi nhánh: %s\nĐịa chỉ: %s",
+                            branch.getBranchName(),
+                            branch.getAddress() != null ? branch.getAddress() : "Chưa cập nhật"
+                    );
+                }
+
                 String availabilityMessage = available
                         ? String.format("%s%s trống vào %s từ %s đến %s",
                             courtName,
@@ -483,7 +571,7 @@ public class ChatService {
                             date, startTime, endTime);
                 String weatherAdvice = getWeatherAdvice(date, startTime,"1566083");
 
-                return availabilityMessage + priceInfo + "\n" + weatherAdvice;
+                return availabilityMessage + priceInfo + branchInfo + "\n" + weatherAdvice;
 
             } catch (Exception e) {
                 log.error("Lỗi khi gọi API kiểm tra sân: ", e);

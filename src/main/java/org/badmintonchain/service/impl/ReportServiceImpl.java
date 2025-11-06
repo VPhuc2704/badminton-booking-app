@@ -1,11 +1,13 @@
 package org.badmintonchain.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.badmintonchain.exceptions.CourtException;
 import org.badmintonchain.model.dto.ReportResponse;
 import org.badmintonchain.model.entity.UsersEntity;
 import org.badmintonchain.model.enums.BookingStatus;
 import org.badmintonchain.model.enums.RoleName;
 import org.badmintonchain.repository.BookingRepository;
+import org.badmintonchain.repository.BranchRepository;
 import org.badmintonchain.repository.CustomerRepository;
 import org.badmintonchain.repository.TransactionRepository;
 import org.badmintonchain.service.AuthService;
@@ -25,6 +27,7 @@ public class ReportServiceImpl implements ReportService {
     private final BookingRepository bookingsRepository;
     private final CustomerRepository customerRepository;
     private final AuthService authService;
+    private final BranchRepository branchRepository;
 
     @Override
     public ReportResponse getDashboardByDate(LocalDate date) {
@@ -72,14 +75,14 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ReportResponse getDashboardByDateRange(LocalDate startDate, LocalDate endDate) {
+    public ReportResponse getDashboardByDateRange(LocalDate startDate, LocalDate endDate, Long branchId ) {
 
-        UsersEntity currentUser = authService.getCurrentUser();
-        Long branchId = null;
+//        UsersEntity currentUser = authService.getCurrentUser();
+//        Long branchId = null;
 
-        if (currentUser.getRoleName() == RoleName.STAFF && currentUser.getBranch() != null) {
-            branchId = currentUser.getBranch().getId();
-        }
+//        if (currentUser.getRoleName() == RoleName.STAFF && currentUser.getBranch() != null) {
+//            branchId = currentUser.getBranch().getId();
+//        }
 
         // Tổng số booking
         long totalBookings = bookingsRepository.countByBookingDateBetweenAndBranch(startDate, endDate, branchId);

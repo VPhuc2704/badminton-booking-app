@@ -7,5 +7,5 @@ import java.time.LocalDate;
 public interface ReportService {
     ReportResponse getDashboardByDate(LocalDate date);
     ReportResponse getDashboardByMonth(int month, int year);
-    ReportResponse getDashboardByDateRange(LocalDate startDate, LocalDate endDate);
+    ReportResponse getDashboardByDateRange(LocalDate startDate, LocalDate endDate, Long branchId);
 }

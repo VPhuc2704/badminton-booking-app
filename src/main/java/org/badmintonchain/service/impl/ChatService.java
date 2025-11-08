@@ -85,10 +85,38 @@ public class ChatService {
         
         Câu hỏi: """ + question;
 
-        List<CourtEntity> courts = courtRepository.findAll();
+//        List<CourtEntity> courts = courtRepository.findAll();
+//        String courtContext = courts.stream()
+//                .map(c -> c.getCourtName() + " (" + c.getCourtType() + ")")
+//                .toList().toString();
+
+        // --- Xác định chi nhánh nếu có ---
+        String branchNameFromQuestion = extractBranchNameFromQuestion(question);
+
+        List<CourtEntity> courts;
+        if (branchNameFromQuestion != null) {
+            // Lấy chi nhánh tương ứng
+            BranchEntity branch = branchRepository.findAll().stream()
+                    .filter(b -> b.getBranchName().equalsIgnoreCase(branchNameFromQuestion))
+                    .findFirst()
+                    .orElse(null);
+
+            if (branch != null) {
+                courts = courtRepository.findAll().stream()
+                        .filter(c -> c.getBranch() != null &&
+                                c.getBranch().getId().equals(branch.getId()))
+                        .toList();
+            } else {
+                courts = courtRepository.findAll();
+            }
+        } else {
+            courts = courtRepository.findAll();
+        }
+
         String courtContext = courts.stream()
                 .map(c -> c.getCourtName() + " (" + c.getCourtType() + ")")
                 .toList().toString();
+
 
         List<ServicesEntity> services = serviceRepository.findAll();
         String serviceContext = services.stream()
@@ -102,8 +130,12 @@ public class ChatService {
                 .toList()
                 .toString();
 
-        String context = "Danh sách sân: " + courtContext + "\nDịch vụ: " + serviceContext;
+//        String context = "Danh sách sân: " + courtContext + "\nDịch vụ: " + serviceContext;
 
+        String context = "Chi nhánh được chọn: " +
+                (branchNameFromQuestion != null ? branchNameFromQuestion : "tất cả") +
+                "\nDanh sách sân: " + courtContext +
+                "\nDịch vụ: " + serviceContext;
 
         String intent = openAiClient.chatCompletion(intentPrompt, context, question);
 
@@ -627,6 +659,25 @@ public class ChatService {
             return startTime; // fallback an toàn
         }
     }
+
+
+
+
+    private String extractBranchNameFromQuestion(String question) {
+        String lower = question.toLowerCase();
+
+        // Duyệt tất cả chi nhánh để tìm tên xuất hiện trong câu hỏi
+        List<BranchEntity> branches = branchRepository.findAll();
+        for (BranchEntity branch : branches) {
+            if (branch.getBranchName() != null &&
+                    lower.contains(branch.getBranchName().toLowerCase())) {
+                return branch.getBranchName();
+            }
+        }
+
+        return null; // không có tên chi nhánh nào khớp
+    }
+
 
 
 }

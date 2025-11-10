@@ -70,9 +70,10 @@ public class CourtController {
     @GetMapping("/api/courts/free")
     public ResponseEntity<ApiResponse<List<CourtDTO>>> getFreeCourts(
             @RequestParam("start") @DateTimeFormat(pattern = "HH:mm") LocalTime start,
-            @RequestParam("end") @DateTimeFormat(pattern = "HH:mm") LocalTime end, HttpServletRequest request) {
+            @RequestParam("end") @DateTimeFormat(pattern = "HH:mm") LocalTime end,
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, HttpServletRequest request) {
 
-        List<CourtDTO> freeCourts = courtService.getFreeCourts(start, end);
+        List<CourtDTO> freeCourts = courtService.getFreeCourts(start, end, date);
 
         if (freeCourts.isEmpty()) {
             return ResponseEntity.noContent().build();

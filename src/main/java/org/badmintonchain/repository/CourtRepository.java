@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
@@ -22,17 +23,20 @@ public interface CourtRepository extends JpaRepository<CourtEntity, Long> {
     @Query(
             value = "SELECT c.* " +
                     "FROM courts c " +
-                    "WHERE NOT EXISTS (" +
+                    "WHERE c.status <> 'MAINTENANCE' AND NOT EXISTS (" +
                     "   SELECT 1 " +
                     "   FROM bookings b " +
                     "   WHERE b.court_id = c.id " +
+                    "     AND b.booking_date = :date"+
                     "     AND b.start_time < :endTime " +
                     "     AND b.end_time > :startTime" +
+
                     ")",
             nativeQuery = true
     )
     List<CourtEntity> findFreeCourts(
             @Param("startTime") LocalTime startTime,
-            @Param("endTime") LocalTime endTime
+            @Param("endTime") LocalTime endTime,
+            @Param("date") LocalDate date
     );
 }

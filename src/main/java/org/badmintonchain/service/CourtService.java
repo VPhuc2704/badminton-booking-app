@@ -21,5 +21,5 @@ public interface CourtService {
     List<AvailabilitySlotDTO> getAvailableSlots(Long courtId, LocalDate date);
     Long mapCourtNameToId(String userInput);
 
-    List<CourtDTO> getFreeCourts(LocalTime start, LocalTime end);
+    List<CourtDTO> getFreeCourts(LocalTime start, LocalTime end, LocalDate date);
 }

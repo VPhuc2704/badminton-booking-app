@@ -320,8 +320,8 @@ public class CourtServiceImpl implements CourtService {
     }
 
     @Override
-    public List<CourtDTO> getFreeCourts(LocalTime start, LocalTime end) {
-        List<CourtEntity> courts = courtRepository.findFreeCourts(start, end);
+    public List<CourtDTO> getFreeCourts(LocalTime start, LocalTime end, LocalDate date) {
+        List<CourtEntity> courts = courtRepository.findFreeCourts(start, end, date);
 
         return courts.stream()
                 .map(CourtMapper::toCourtDTO)

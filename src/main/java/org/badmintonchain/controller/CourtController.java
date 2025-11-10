@@ -67,6 +67,25 @@ public class CourtController {
         );
     }
 
+    @GetMapping("/api/courts/free")
+    public ResponseEntity<ApiResponse<List<CourtDTO>>> getFreeCourts(
+            @RequestParam("start") @DateTimeFormat(pattern = "HH:mm") LocalTime start,
+            @RequestParam("end") @DateTimeFormat(pattern = "HH:mm") LocalTime end, HttpServletRequest request) {
+
+        List<CourtDTO> freeCourts = courtService.getFreeCourts(start, end);
+
+        if (freeCourts.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Get court successfully",
+                HttpStatus.OK.value(),
+                freeCourts,
+                request.getRequestURI()
+        ));
+    }
+
     // --- ADMIN API ---
     @GetMapping("/api/admin/courts")
     public ResponseEntity<ApiResponse<PageResponse<CourtDTO>>> getAllAdminCourts(@RequestParam(defaultValue = "0") int page,

@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class CourtServiceImpl implements CourtService {
@@ -316,6 +317,15 @@ public class CourtServiceImpl implements CourtService {
         }
 
         return null; // Không tìm thấy
+    }
+
+    @Override
+    public List<CourtDTO> getFreeCourts(LocalTime start, LocalTime end) {
+        List<CourtEntity> courts = courtRepository.findFreeCourts(start, end);
+
+        return courts.stream()
+                .map(CourtMapper::toCourtDTO)
+                .collect(Collectors.toList());
     }
 
 }
